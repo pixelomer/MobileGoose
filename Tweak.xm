@@ -2,6 +2,7 @@
 #import <Goose/MGGooseView.h>
 
 static UIWindow *gooseWindow;
+static void(^animationHandler)(void);
 
 %hook SpringBoard
 
@@ -22,6 +23,10 @@ static UIWindow *gooseWindow;
 	gooseWindow.windowLevel = CGFLOAT_MAX - 1;
 	[gooseWindow makeKeyAndVisible];
 	[gooseWindow resignKeyWindow];
+	animationHandler = ^{
+		[gooseView setFacingTo:(CGFloat)arc4random_uniform(360) animationCompletion:animationHandler];
+	};
+	animationHandler();
 }
 
 %end

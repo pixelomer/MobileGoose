@@ -4,8 +4,7 @@
 
 @implementation MGGooseView
 
-+ (void)rotatePath:(UIBezierPath *)path degree:(CGFloat)degree {
-    CGRect bounds = CGPathGetBoundingBox(path.CGPath);
++ (void)rotatePath:(UIBezierPath *)path degree:(CGFloat)degree bounds:(CGRect)bounds {
     CGPoint center = CGPointMake(CGRectGetMidX(bounds), CGRectGetMidY(bounds));
     
     CGFloat radians = (degree / 180.0f * M_PI);
@@ -26,15 +25,51 @@
 
 	// Shadow
 	[[UIColor colorWithWhite:0.25 alpha:0.25] setFill];
+	CGRect shadowBounds = CGRectMake(10, 30, 30, 30);
 	@autoreleasepool {
-		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(10, 30, 30, 30)];
+		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:shadowBounds];
 		[path fill];
 	}
 
 	// Feet
 	[[UIColor orangeColor] setFill];
 	@autoreleasepool {
-		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(20, 45, 8, 8)];
+		switch (_walkingState) {
+			case 0:
+				_foot1Y = _foot2Y = 36.0;
+				break;
+			case 1:
+				_foot1Y++;
+				_foot2Y--;
+				break;
+			case 2:
+				_foot1Y--;
+				_foot2Y++;
+				break;
+			case 3:
+				_foot1Y++;
+				break;
+		}
+		switch (_walkingState) {
+			case 1:
+			case 3:
+				if (_foot1Y >= 50.0) {
+					_walkingState = 2;
+					_foot1Y = 50.0;
+					_foot2Y = 36.0;
+				}
+				break;
+			case 2:
+				if (_foot1Y <= 36.0) {
+					_walkingState = 1;
+					_foot1Y = 36.0;
+					_foot2Y = 50.0;
+				}
+				break;
+		}
+		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(12.5, _foot1Y, 6, 6)];
+		[path appendPath:[UIBezierPath bezierPathWithOvalInRect:CGRectMake(27.5, _foot2Y, 6, 6)]];
+		[self.class rotatePath:path degree:facingToDegrees+90.0 bounds:shadowBounds];
 		[path fill];
 	}
 	
@@ -49,7 +84,7 @@
 		UIBezierPath *finalPath = [UIBezierPath bezierPathWithRect:rectangleRect];
 		[finalPath appendPath:oval1];
 		[finalPath appendPath:oval2];
-		[self.class rotatePath:finalPath degree:facingToDegrees+90.0];
+		[self.class rotatePath:finalPath degree:facingToDegrees+90.0 bounds:finalPath.bounds];
 		[finalPath fill];
 	}
 	
@@ -107,15 +142,36 @@
 	}
 }
 
+- (void)setFacingTo:(CGFloat)degrees animationCompletion:(void(^)(void))completion {
+	_targetFacingTo = degrees;
+	_animationCompletion = completion;
+}
+
 - (void)timer:(id)unused {
-	self.facingTo += 1.0;
-	if (self.facingTo >= 360.0) {
-		self.facingTo = 0.0;
+	if (_targetFacingTo >= 0.0) {
+		CGFloat change;
+		if (_targetFacingTo > _facingTo) change = 1.0;
+		else change = -1.0;
+		CGFloat absoluteDifference = fabs(_facingTo - _targetFacingTo);
+		if (absoluteDifference <= 0.01) {
+			_facingTo = _targetFacingTo;
+			_targetFacingTo = -1.0;
+			if (_animationCompletion) {
+				// Completion handler might set _animationCompletion itself.
+				void(^completion)(void) = _animationCompletion;
+				_animationCompletion = nil;
+				completion();
+			}
+		}
+		else {
+			if (absoluteDifference <= 1.0) change *= absoluteDifference;
+			else if (absoluteDifference <= 10.0);
+			else change *= (absoluteDifference / 5.0);
+			_facingTo += change;
+		}
 	}
-	if (!((int)self.facingTo % 30)) {
-		CGRect rect = self.frame;
-		rect.origin.x++;
-		self.frame = rect;
+	if (_facingTo >= 360.0) {
+		_facingTo = 0.0;
 	}
 	[self setNeedsDisplay];
 }
@@ -124,7 +180,11 @@
 	if ((self = [super init])) {
 		self.opaque = NO;
 		self.backgroundColor = [UIColor clearColor];
-		timer = [NSTimer scheduledTimerWithTimeInterval:(1.0/30.0) target:self selector:@selector(timer:) userInfo:nil repeats:YES];
+		_foot1Y = 36.0;
+		_walkingState = 3;
+		_targetFacingTo = -1.0;
+		_foot2Y = 36.0;
+		_timer = [NSTimer scheduledTimerWithTimeInterval:(1.0/30.0) target:self selector:@selector(timer:) userInfo:nil repeats:YES];
 	}
 	return self;
 }
