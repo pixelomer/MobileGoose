@@ -140,11 +140,20 @@
 			offset = -offset;
 		}
 	}
+	if (_remainingFramesUntilCompletion == 0) _walkingState = 0;
+	if (_remainingFramesUntilCompletion != -1) _remainingFramesUntilCompletion--;
 }
 
 - (void)setFacingTo:(CGFloat)degrees animationCompletion:(void(^)(void))completion {
 	_targetFacingTo = degrees;
 	_animationCompletion = completion;
+}
+
+- (void)walkForDuration:(NSTimeInterval)duration multiplier:(CGFloat)multiplier completionHandler:(void(^)(void))completion {
+	_remainingFramesUntilCompletion = duration * 30.0;
+	_walkCompletion = completion;
+	_walkingState = 3;
+	_walkMultiplier = multiplier;
 }
 
 - (void)timer:(id)unused {
@@ -170,6 +179,28 @@
 			_facingTo += change;
 		}
 	}
+	if (_remainingFramesUntilCompletion >= 0) {
+		CGRect frame = self.frame;
+		frame.origin.x += cos(DEG_TO_RAD(_facingTo)) * _walkMultiplier;
+		frame.origin.y += sin(DEG_TO_RAD(_facingTo)) * _walkMultiplier;
+		CGRect screenBounds = self._viewControllerForAncestor.view.bounds;
+		if (((frame.origin.x + frame.size.width) >= (screenBounds.size.width - 1)) ||
+			((frame.origin.y + frame.size.height) >= (screenBounds.size.height - 1)) ||
+			(frame.origin.x <= 1) ||
+			(frame.origin.y <= 1)
+		) {
+			_remainingFramesUntilCompletion = -1;
+			_walkingState = 0;
+		}
+		else {
+			self.frame = frame;
+		}
+	}
+	if ((_remainingFramesUntilCompletion == -1) && _walkCompletion) {
+		void(^completion)(void) = _walkCompletion;
+		_walkCompletion = nil;
+		completion();
+	}
 	if (_facingTo >= 360.0) {
 		_facingTo = 0.0;
 	}
@@ -181,7 +212,9 @@
 		self.opaque = NO;
 		self.backgroundColor = [UIColor clearColor];
 		_foot1Y = 36.0;
-		_walkingState = 3;
+		_walkingState = 0;
+		_facingTo = 45.0;
+		_remainingFramesUntilCompletion = -1;
 		_targetFacingTo = -1.0;
 		_foot2Y = 36.0;
 		_timer = [NSTimer scheduledTimerWithTimeInterval:(1.0/30.0) target:self selector:@selector(timer:) userInfo:nil repeats:YES];
