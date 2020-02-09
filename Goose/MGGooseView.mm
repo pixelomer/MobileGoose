@@ -108,13 +108,20 @@
 		UIBezierPath *path = [UIBezierPath bezierPathWithRect:rect];
 		rect = CGRectMake(
 			rect.origin.x,
-			rect.origin.y + rect.size.width - (rect.size.width / 2),
+			rect.origin.y - (rect.size.width / 2),
 			rect.size.width,
 			rect.size.width
 		);
 		[path appendPath:[UIBezierPath bezierPathWithOvalInRect:rect]];
-		rect.origin.y -= rect.size.width;
+		rect.origin.y += rect.size.width;
 		[path appendPath:[UIBezierPath bezierPathWithOvalInRect:rect]];
+		/*CGFloat plus90 = (facingToDegrees + 90.0);
+		if (plus90 > 360.0) plus90 -= 360.0;
+		CGFloat multiplier = ((plus90 > 180) ? -1 : 1);
+		if (plus90 > 180.0) plus90 -= 180.0;
+		if (plus90 > 90.0) multiplier *= ((plus90 - 90.0) / 90.0);
+		else multiplier *= ((90.0 - plus90) / 90.0);
+		[self.class rotatePath:path degree:(multiplier * 90.0) bounds:rect];*/
 		[path fill];
 	}
 	
@@ -147,14 +154,15 @@
 	}
 	if (_remainingFramesUntilCompletion == 0) _walkingState = 0;
 	if (_remainingFramesUntilCompletion != -1) _remainingFramesUntilCompletion--;
+	if (_frameHandler) _frameHandler();
 }
 
-- (void)setFacingTo:(CGFloat)degrees animationCompletion:(void(^)(void))completion {
+- (void)setFacingTo:(CGFloat)degrees animationCompletion:(void(^)(MGGooseView *))completion {
 	_targetFacingTo = degrees;
 	_animationCompletion = completion;
 }
 
-- (void)walkForDuration:(NSTimeInterval)duration speed:(CGFloat)multiplier completionHandler:(void(^)(void))completion {
+- (void)walkForDuration:(NSTimeInterval)duration speed:(CGFloat)multiplier completionHandler:(void(^)(MGGooseView *))completion {
 	_remainingFramesUntilCompletion = duration * FPS;
 	_walkCompletion = completion;
 	_walkingState = 3;
@@ -172,9 +180,9 @@
 			_targetFacingTo = -1.0;
 			if (_animationCompletion) {
 				// Completion handler might set _animationCompletion itself.
-				void(^completion)(void) = _animationCompletion;
+				void(^completion)(MGGooseView *) = _animationCompletion;
 				_animationCompletion = nil;
-				completion();
+				completion(self);
 			}
 		}
 		else {
@@ -202,9 +210,9 @@
 		}
 	}
 	if ((_remainingFramesUntilCompletion == -1) && _walkCompletion) {
-		void(^completion)(void) = _walkCompletion;
+		void(^completion)(MGGooseView *) = _walkCompletion;
 		_walkCompletion = nil;
-		completion();
+		completion(self);
 	}
 	if (_facingTo >= 360.0) {
 		_facingTo = 0.0;

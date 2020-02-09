@@ -8,14 +8,15 @@
 	NSInteger _walkingState;
 	CGFloat _targetFacingTo;
 	NSInteger _remainingFramesUntilCompletion;
-	void(^_walkCompletion)(void);
-	void(^_animationCompletion)(void);
+	void(^_walkCompletion)(MGGooseView *);
+	void(^_animationCompletion)(MGGooseView *);
 	CGFloat _walkMultiplier;
 }
+@property (nonatomic, strong) void(^frameHandler)(void);
 @property (nonatomic, assign) CGFloat facingTo;
 - (void)walkForDuration:(NSTimeInterval)duration
 	speed:(CGFloat)speed
-	completionHandler:(void(^)(void))completion;
+	completionHandler:(void(^)(MGGooseView *))completion;
 - (void)setFacingTo:(CGFloat)degress
-	animationCompletion:(void(^)(void))completion;
+	animationCompletion:(void(^)(MGGooseView *))completion;
 @end
