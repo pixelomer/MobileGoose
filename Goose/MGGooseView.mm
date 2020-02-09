@@ -1,6 +1,7 @@
 #import "MGGooseView.h"
 
 #define DEG_TO_RAD(degress) ((degress) * M_PI / 180.0)
+#define FPS 30.0
 
 @implementation MGGooseView
 
@@ -25,7 +26,7 @@
 
 	// Shadow
 	[[UIColor colorWithWhite:0.25 alpha:0.25] setFill];
-	CGRect shadowBounds = CGRectMake(10, 30, 30, 30);
+	CGRect shadowBounds = CGRectMake(20, 30, 30, 30);
 	@autoreleasepool {
 		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:shadowBounds];
 		[path fill];
@@ -34,22 +35,26 @@
 	// Feet
 	[[UIColor orangeColor] setFill];
 	@autoreleasepool {
+		CGFloat change = (_walkMultiplier / 2.6);
 		switch (_walkingState) {
 			case 0:
 				_foot1Y = _foot2Y = 36.0;
 				break;
 			case 1:
-				_foot1Y++;
-				_foot2Y--;
+				_foot1Y += change;
+				_foot2Y -= change;
 				break;
 			case 2:
-				_foot1Y--;
-				_foot2Y++;
+				_foot1Y -= change;
+				_foot2Y += change;
 				break;
 			case 3:
-				_foot1Y++;
+				_foot1Y += change;
 				break;
 		}
+		const CGFloat footSize = 6.0;
+		const CGFloat foot1X = 24.5;
+		const CGFloat foot2X = 38.5;
 		switch (_walkingState) {
 			case 1:
 			case 3:
@@ -62,13 +67,13 @@
 			case 2:
 				if (_foot1Y <= 36.0) {
 					_walkingState = 1;
-					_foot1Y = 36.0;
 					_foot2Y = 50.0;
+					_foot1Y = 36.0;
 				}
 				break;
 		}
-		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(12.5, _foot1Y, 6, 6)];
-		[path appendPath:[UIBezierPath bezierPathWithOvalInRect:CGRectMake(27.5, _foot2Y, 6, 6)]];
+		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(foot1X, _foot1Y, footSize, footSize)];
+		[path appendPath:[UIBezierPath bezierPathWithOvalInRect:CGRectMake(foot2X, _foot2Y, footSize, footSize)]];
 		[self.class rotatePath:path degree:facingToDegrees+90.0 bounds:shadowBounds];
 		[path fill];
 	}
@@ -76,7 +81,7 @@
 	// Body
 	[[UIColor whiteColor] setFill];
 	@autoreleasepool {
-		CGRect oval1Rect = CGRectMake(15, 20, 20, 20);
+		CGRect oval1Rect = CGRectMake(25, 20, 20, 20);
 		UIBezierPath *oval1 = [UIBezierPath bezierPathWithOvalInRect:oval1Rect];
 		CGRect oval2Rect = CGRectMake(oval1Rect.origin.x, 55-oval1Rect.size.height, oval1Rect.size.width, oval1Rect.size.height);
 		UIBezierPath *oval2 = [UIBezierPath bezierPathWithOvalInRect:oval2Rect];
@@ -92,7 +97,7 @@
 	@autoreleasepool {
 		// Create a rect without the correct position
 		const CGFloat neckHeight = 10;
-		CGRect rect = CGRectMake(0, 20, 15, neckHeight);
+		CGRect rect = CGRectMake(10, 20, 15, neckHeight);
 		
 		// Calculate the correct position
 		const CGFloat radius = 10.0;
@@ -117,7 +122,7 @@
 	@autoreleasepool {
 		// Create a rect without the correct position
 		const CGFloat beakSize = 8.0;
-		CGRect rect = CGRectMake(0, 20, beakSize, beakSize);
+		CGRect rect = CGRectMake(10, 20, beakSize, beakSize);
 		
 		// Calculate the correct position
 		const CGFloat beakRadius = 15.0;
@@ -133,7 +138,7 @@
 		rect.size.height = rect.size.width = eyeSize;
 		[[UIColor blackColor] setFill];
 		for (int8_t i=0, offset=15; i<2; i+=1.0) {
-			rect.origin.x = 22.5 + (eyeRadius * cos(DEG_TO_RAD(facingToDegrees + offset)));
+			rect.origin.x = 32.5 + (eyeRadius * cos(DEG_TO_RAD(facingToDegrees + offset)));
 			rect.origin.y = 24.5 + (eyeRadius * sin(DEG_TO_RAD(facingToDegrees + offset)));
 			path = [UIBezierPath bezierPathWithOvalInRect:rect];
 			[path fill];
@@ -149,8 +154,8 @@
 	_animationCompletion = completion;
 }
 
-- (void)walkForDuration:(NSTimeInterval)duration multiplier:(CGFloat)multiplier completionHandler:(void(^)(void))completion {
-	_remainingFramesUntilCompletion = duration * 30.0;
+- (void)walkForDuration:(NSTimeInterval)duration speed:(CGFloat)multiplier completionHandler:(void(^)(void))completion {
+	_remainingFramesUntilCompletion = duration * FPS;
 	_walkCompletion = completion;
 	_walkingState = 3;
 	_walkMultiplier = multiplier;
@@ -207,8 +212,8 @@
 	[self setNeedsDisplay];
 }
 
-- (instancetype)init {
-	if ((self = [super init])) {
+- (instancetype)initWithFrame:(CGRect)frame {
+	if ((self = [super initWithFrame:frame])) {
 		self.opaque = NO;
 		self.backgroundColor = [UIColor clearColor];
 		_foot1Y = 36.0;
@@ -217,9 +222,13 @@
 		_remainingFramesUntilCompletion = -1;
 		_targetFacingTo = -1.0;
 		_foot2Y = 36.0;
-		_timer = [NSTimer scheduledTimerWithTimeInterval:(1.0/30.0) target:self selector:@selector(timer:) userInfo:nil repeats:YES];
+		_timer = [NSTimer scheduledTimerWithTimeInterval:(1.0/FPS) target:self selector:@selector(timer:) userInfo:nil repeats:YES];
 	}
 	return self;
+}
+
+- (instancetype)init {
+	return [self initWithFrame:CGRectZero];
 }
 
 @end

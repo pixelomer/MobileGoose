@@ -38,7 +38,7 @@ static UIViewController *viewController;
 		[gooseView setFacingTo:(CGFloat)arc4random_uniform(360) animationCompletion:animationHandler];
 	};
 	animationHandler = ^{
-		[gooseView walkForDuration:(NSTimeInterval)(arc4random_uniform(3)+1) multiplier:2.6 completionHandler:^{
+		[gooseView walkForDuration:(NSTimeInterval)(arc4random_uniform(3)+1) speed:2.6 completionHandler:^{
 			CGRect bounds = viewController.view.bounds;
 			CGFloat to = 45.0;
 			if (gooseView.center.x > (bounds.size.width/2)) to = 180-to;

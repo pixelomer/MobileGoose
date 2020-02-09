@@ -2,6 +2,7 @@
 
 @interface MGGooseView : UIView {
 	NSTimer *_timer;
+	NSMutableArray<UIView *> *_mud;
 	CGFloat _foot1Y;
 	CGFloat _foot2Y;
 	NSInteger _walkingState;
@@ -13,7 +14,7 @@
 }
 @property (nonatomic, assign) CGFloat facingTo;
 - (void)walkForDuration:(NSTimeInterval)duration
-	multiplier:(CGFloat)multiplier
+	speed:(CGFloat)speed
 	completionHandler:(void(^)(void))completion;
 - (void)setFacingTo:(CGFloat)degress
 	animationCompletion:(void(^)(void))completion;
