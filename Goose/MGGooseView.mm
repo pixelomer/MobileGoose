@@ -38,7 +38,7 @@
 		CGFloat change = (_walkMultiplier / 2.6);
 		switch (_walkingState) {
 			case 0:
-				_foot1Y = _foot2Y = 36.0;
+				if (_autoResetFeet) _foot1Y = _foot2Y = 36.0;
 				break;
 			case 1:
 				_foot1Y += change;
@@ -55,6 +55,11 @@
 		const CGFloat footSize = 6.0;
 		const CGFloat foot1X = 24.5;
 		const CGFloat foot2X = 38.5;
+		if (_walkMultiplier < 0.0) {
+			change = _foot2Y;
+			_foot2Y = _foot1Y;
+			_foot1Y = change;
+		}
 		switch (_walkingState) {
 			case 1:
 			case 3:
@@ -71,6 +76,11 @@
 					_foot1Y = 36.0;
 				}
 				break;
+		}
+		if (_walkMultiplier < 0.0) {
+			change = _foot2Y;
+			_foot2Y = _foot1Y;
+			_foot1Y = change;
 		}
 		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(foot1X, _foot1Y, footSize, footSize)];
 		[path appendPath:[UIBezierPath bezierPathWithOvalInRect:CGRectMake(foot2X, _foot2Y, footSize, footSize)]];
@@ -115,13 +125,6 @@
 		[path appendPath:[UIBezierPath bezierPathWithOvalInRect:rect]];
 		rect.origin.y += rect.size.width;
 		[path appendPath:[UIBezierPath bezierPathWithOvalInRect:rect]];
-		/*CGFloat plus90 = (facingToDegrees + 90.0);
-		if (plus90 > 360.0) plus90 -= 360.0;
-		CGFloat multiplier = ((plus90 > 180) ? -1 : 1);
-		if (plus90 > 180.0) plus90 -= 180.0;
-		if (plus90 > 90.0) multiplier *= ((plus90 - 90.0) / 90.0);
-		else multiplier *= ((90.0 - plus90) / 90.0);
-		[self.class rotatePath:path degree:(multiplier * 90.0) bounds:rect];*/
 		[path fill];
 	}
 	
@@ -153,8 +156,8 @@
 		}
 	}
 	if (_remainingFramesUntilCompletion == 0) _walkingState = 0;
-	if (_remainingFramesUntilCompletion != -1) _remainingFramesUntilCompletion--;
-	if (_frameHandler) _frameHandler();
+	if (_remainingFramesUntilCompletion >= 0) _remainingFramesUntilCompletion--;
+	if (_frameHandler) _frameHandler(self);
 }
 
 - (void)setFacingTo:(CGFloat)degrees animationCompletion:(void(^)(MGGooseView *))completion {
@@ -165,7 +168,7 @@
 - (void)walkForDuration:(NSTimeInterval)duration speed:(CGFloat)multiplier completionHandler:(void(^)(MGGooseView *))completion {
 	_remainingFramesUntilCompletion = duration * FPS;
 	_walkCompletion = completion;
-	_walkingState = 3;
+	_walkingState = (multiplier >= 0.0) ? 3 : 2;
 	_walkMultiplier = multiplier;
 }
 
@@ -192,20 +195,31 @@
 			_facingTo += change;
 		}
 	}
-	if (_remainingFramesUntilCompletion >= 0) {
+	CGRect oldFrame = self.frame;
+	if (_remainingFramesUntilCompletion != -1) {
 		CGRect frame = self.frame;
 		frame.origin.x += cos(DEG_TO_RAD(_facingTo)) * _walkMultiplier;
 		frame.origin.y += sin(DEG_TO_RAD(_facingTo)) * _walkMultiplier;
 		CGRect screenBounds = self._viewControllerForAncestor.view.bounds;
-		if (((frame.origin.x + frame.size.width) >= (screenBounds.size.width - 1)) ||
+		if (_stopsAtEdge &&
+			(((frame.origin.x + frame.size.width) >= (screenBounds.size.width - 1)) ||
 			((frame.origin.y + frame.size.height) >= (screenBounds.size.height - 1)) ||
 			(frame.origin.x <= 1) ||
-			(frame.origin.y <= 1)
+			(frame.origin.y <= 1))
 		) {
 			_remainingFramesUntilCompletion = -1;
 			_walkingState = 0;
 		}
 		else {
+			#define test(a, b) if ((frame.origin. a + frame.size. b) < 0) { \
+				frame.origin. a = self._viewControllerForAncestor.view.frame.size. b + self.frame.size. b; \
+			} \
+			else if ((frame.origin. a - frame.size. b) > self._viewControllerForAncestor.view.frame.size. b) { \
+				frame.origin. a = -(self.frame.size. b); \
+			}
+			test(x, width);
+			test(y, height);
+			#undef test
 			self.frame = frame;
 		}
 	}
@@ -217,6 +231,8 @@
 	if (_facingTo >= 360.0) {
 		_facingTo = 0.0;
 	}
+	_positionChange.x = self.frame.origin.x - oldFrame.origin.x;
+	_positionChange.y = self.frame.origin.y - oldFrame.origin.y;
 	[self setNeedsDisplay];
 }
 
@@ -230,6 +246,7 @@
 		_remainingFramesUntilCompletion = -1;
 		_targetFacingTo = -1.0;
 		_foot2Y = 36.0;
+		_stopsAtEdge = YES;
 		_timer = [NSTimer scheduledTimerWithTimeInterval:(1.0/FPS) target:self selector:@selector(timer:) userInfo:nil repeats:YES];
 	}
 	return self;

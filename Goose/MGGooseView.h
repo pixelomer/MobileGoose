@@ -1,8 +1,10 @@
 #import <UIKit/UIKit.h>
 
+// Do you think I'm using the wrong terms in variable names? If so,
+// feel free to make a pull request that fixes it.
+
 @interface MGGooseView : UIView {
 	NSTimer *_timer;
-	NSMutableArray<UIView *> *_mud;
 	CGFloat _foot1Y;
 	CGFloat _foot2Y;
 	NSInteger _walkingState;
@@ -12,8 +14,11 @@
 	void(^_animationCompletion)(MGGooseView *);
 	CGFloat _walkMultiplier;
 }
-@property (nonatomic, strong) void(^frameHandler)(void);
+@property (nonatomic, strong) void(^frameHandler)(MGGooseView *);
 @property (nonatomic, assign) CGFloat facingTo;
+@property (nonatomic, assign) BOOL stopsAtEdge;
+@property (nonatomic, assign, readonly) CGPoint positionChange;
+@property (nonatomic, assign) BOOL autoResetFeet;
 - (void)walkForDuration:(NSTimeInterval)duration
 	speed:(CGFloat)speed
 	completionHandler:(void(^)(MGGooseView *))completion;
