@@ -13,8 +13,8 @@
 	void(^_walkCompletion)(MGGooseView *);
 	void(^_animationCompletion)(MGGooseView *);
 	CGFloat _walkMultiplier;
+	NSPointerArray *_frameHandlers;
 }
-@property (nonatomic, strong) void(^frameHandler)(MGGooseView *);
 @property (nonatomic, assign) CGFloat facingTo;
 @property (nonatomic, assign) BOOL stopsAtEdge;
 @property (nonatomic, assign, readonly) CGPoint positionChange;
@@ -24,4 +24,6 @@
 	completionHandler:(void(^)(MGGooseView *))completion;
 - (void)setFacingTo:(CGFloat)degress
 	animationCompletion:(void(^)(MGGooseView *))completion;
+- (NSUInteger)addFrameHandler:(void(^)(MGGooseView *))handler;
+- (void)removeFrameHandlerAtIndex:(NSUInteger)index;
 @end

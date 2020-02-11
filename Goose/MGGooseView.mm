@@ -157,7 +157,25 @@
 	}
 	if (_remainingFramesUntilCompletion == 0) _walkingState = 0;
 	if (_remainingFramesUntilCompletion >= 0) _remainingFramesUntilCompletion--;
-	if (_frameHandler) _frameHandler(self);
+	for (NSUInteger i=0; i<_frameHandlers.count; i++) {
+		void(^handler)(MGGooseView *) = (typeof(handler))[_frameHandlers pointerAtIndex:i];
+		if (handler) handler(self);
+	}
+}
+
+- (NSUInteger)addFrameHandler:(void(^)(MGGooseView *))handler {
+	for (NSUInteger i=0; i<_frameHandlers.count; i++) {
+		if (![_frameHandlers pointerAtIndex:i]) {
+			[_frameHandlers replacePointerAtIndex:i withPointer:(__bridge void *)handler];
+			return i;
+		}
+	}
+	[_frameHandlers addPointer:(__bridge void *)handler];
+	return _frameHandlers.count - 1;
+}
+
+- (void)removeFrameHandlerAtIndex:(NSUInteger)index {
+	[_frameHandlers replacePointerAtIndex:index withPointer:NULL];
 }
 
 - (void)setFacingTo:(CGFloat)degrees animationCompletion:(void(^)(MGGooseView *))completion {
@@ -244,6 +262,7 @@
 		_walkingState = 0;
 		_facingTo = 45.0;
 		_remainingFramesUntilCompletion = -1;
+		_frameHandlers = [NSPointerArray strongObjectsPointerArray];
 		_targetFacingTo = -1.0;
 		_foot2Y = 36.0;
 		_stopsAtEdge = YES;

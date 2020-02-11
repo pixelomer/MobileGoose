@@ -14,6 +14,7 @@ static void(^finishMemeAnimation)(MGGooseView *);
 static void(^turnToUserAnimation)(MGGooseView *);
 static void(^loadMeme)(void);
 static UIImageView *imageView;
+static NSInteger frameHandlerIndex;
 static NSArray *honks;
 static UIViewController *viewController;
 
@@ -36,7 +37,7 @@ static UIViewController *viewController;
 	[gooseWindow makeKeyAndVisible];
 	[gooseWindow resignKeyWindow];
 	finishMemeAnimation = ^(MGGooseView *sender){
-		sender.frameHandler = nil;
+		[sender removeFrameHandlerAtIndex:frameHandlerIndex];
 		sender.stopsAtEdge = YES;
 		turnToUserAnimation(sender);
 	};
@@ -60,7 +61,8 @@ static UIViewController *viewController;
 	};
 	gotoMemeFrameHandler = ^(MGGooseView *sender){
 		if (sender.frame.origin.x <= -15.0) {
-			sender.frameHandler = pullMemeFrameHandler;
+			[sender removeFrameHandlerAtIndex:frameHandlerIndex];
+			frameHandlerIndex = [sender addFrameHandler:pullMemeFrameHandler];
 			imageView.center = CGPointMake(-(imageView.frame.size.width/2.0), sender.center.y);
 			imageView.backgroundColor = [UIColor blackColor];
 			imageView.hidden = NO;
@@ -72,7 +74,7 @@ static UIViewController *viewController;
 		}
 	};
 	turnToMemeHandler = ^(MGGooseView *sender){
-		sender.frameHandler = gotoMemeFrameHandler;
+		frameHandlerIndex = [sender addFrameHandler:gotoMemeFrameHandler];
 		sender.stopsAtEdge = NO;
 		[sender walkForDuration:-1 speed:5.0 completionHandler:nil];
 	};
