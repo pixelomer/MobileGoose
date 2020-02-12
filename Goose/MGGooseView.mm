@@ -5,6 +5,14 @@
 
 @implementation MGGooseView
 
+static UIColor *shadowColor;
+
++ (void)initialize {
+	if (self == [MGGooseView class]) {
+		shadowColor = [UIColor colorWithWhite:0.25 alpha:0.25];
+	}
+}
+
 + (void)rotatePath:(UIBezierPath *)path degree:(CGFloat)degree bounds:(CGRect)bounds {
     CGPoint center = CGPointMake(CGRectGetMidX(bounds), CGRectGetMidY(bounds));
     
@@ -25,7 +33,7 @@
 	CGFloat facingToDegrees = _facingTo;
 
 	// Shadow
-	[[UIColor colorWithWhite:0.25 alpha:0.25] setFill];
+	[shadowColor setFill];
 	CGRect shadowBounds = CGRectMake(20, 30, 30, 30);
 	@autoreleasepool {
 		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:shadowBounds];

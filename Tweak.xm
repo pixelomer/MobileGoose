@@ -1,5 +1,6 @@
 #import <UIKit/UIKit.h>
 #import <Goose/MGGooseView.h>
+#import <Goose/MGImageContainerView.h>
 
 static UIWindow *gooseWindow;
 static void(^animationHandler)(MGGooseView *);
@@ -13,7 +14,7 @@ static void(^pullMemeFrameHandler)(MGGooseView *);
 static void(^finishMemeAnimation)(MGGooseView *);
 static void(^turnToUserAnimation)(MGGooseView *);
 static void(^loadMeme)(void);
-static UIImageView *imageView;
+static MGImageContainerView *imageContainer;
 static NSInteger frameHandlerIndex;
 static NSArray *honks;
 static UIViewController *viewController;
@@ -30,10 +31,9 @@ static UIViewController *viewController;
 	gooseWindow.backgroundColor = [UIColor clearColor];
 	gooseWindow.rootViewController = viewController = [UIViewController new];
 	gooseWindow.windowLevel = CGFLOAT_MAX - 1;
-	imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 150, 150)];
-	imageView.hidden = YES;
-	imageView.contentMode = UIViewContentModeScaleAspectFit;
-	[gooseWindow.rootViewController.view addSubview:imageView];
+	imageContainer = [[MGImageContainerView alloc] initWithFrame:CGRectMake(0, 0, 150, 150)];
+	imageContainer.hidden = YES;
+	[gooseWindow.rootViewController.view addSubview:imageContainer];
 	[gooseWindow makeKeyAndVisible];
 	[gooseWindow resignKeyWindow];
 	finishMemeAnimation = ^(MGGooseView *sender){
@@ -44,28 +44,27 @@ static UIViewController *viewController;
 	loadMeme = ^{
 		NSString *path = @"/Library/Application Support/MobileGoose/Memes";
 		NSArray *files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:path error:nil];
+		UIImage *image = nil;
 		if (files.count) {
 			NSString *fullImagePath = [path stringByAppendingPathComponent:files[arc4random_uniform(files.count)]];
-			UIImage *image = [UIImage imageWithContentsOfFile:fullImagePath];
-			if (image) dispatch_async(dispatch_get_main_queue(), ^{
-				imageView.image = image;
-				imageView.backgroundColor = [UIColor clearColor];
-				[imageView setNeedsDisplay];
-			});
+			image = [UIImage imageWithContentsOfFile:fullImagePath];
 		}
+		dispatch_async(dispatch_get_main_queue(), ^{
+			imageContainer.imageView.image = image;
+			[imageContainer.imageView setNeedsDisplay];
+		});
 	};
 	pullMemeFrameHandler = ^(MGGooseView *sender){
-		CGPoint center = imageView.center;
+		CGPoint center = imageContainer.center;
 		center.x += sender.positionChange.x;
-		imageView.center = center;
+		imageContainer.center = center;
 	};
 	gotoMemeFrameHandler = ^(MGGooseView *sender){
 		if (sender.frame.origin.x <= -15.0) {
 			[sender removeFrameHandlerAtIndex:frameHandlerIndex];
 			frameHandlerIndex = [sender addFrameHandler:pullMemeFrameHandler];
-			imageView.center = CGPointMake(-(imageView.frame.size.width/2.0), sender.center.y);
-			imageView.backgroundColor = [UIColor blackColor];
-			imageView.hidden = NO;
+			imageContainer.center = CGPointMake(-(imageContainer.frame.size.width/2.0), sender.center.y);
+			imageContainer.hidden = NO;
 			dispatch_async(
 				dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0),
 				loadMeme
@@ -76,7 +75,7 @@ static UIViewController *viewController;
 	turnToMemeHandler = ^(MGGooseView *sender){
 		frameHandlerIndex = [sender addFrameHandler:gotoMemeFrameHandler];
 		sender.stopsAtEdge = NO;
-		[sender walkForDuration:-1 speed:5.0 completionHandler:nil];
+		[sender walkForDuration:-1 speed:4.8 completionHandler:nil];
 	};
 	findMeme = ^(MGGooseView *sender){
 		[sender setFacingTo:180.0 animationCompletion:turnToMemeHandler];
@@ -86,7 +85,8 @@ static UIViewController *viewController;
 			dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * ((double)arc4random_uniform(50) / 10.0)),
 			dispatch_get_main_queue(),
 			^{
-				if (arc4random_uniform(3) == 1) findMeme(sender);
+				uint8_t randomValue = arc4random_uniform(3);
+				if (randomValue == 1) findMeme(sender);
 				else walkHandler(sender);
 			}
 		);
