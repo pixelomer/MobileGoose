@@ -11,7 +11,7 @@ static UIColor *backgroundColor;
 
 + (void)initialize {
 	if (self == [MGContainerView class]) {
-		backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.25];
+		backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.125];
 	}
 }
 

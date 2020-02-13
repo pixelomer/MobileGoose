@@ -1,6 +1,16 @@
 #import <UIKit/UIKit.h>
 #import <Goose/MGGooseView.h>
+#import <Goose/MGTextContainerView.h>
 #import <Goose/MGImageContainerView.h>
+#import <Goose/MGViewController.h>
+
+@interface SBWindow : UIWindow
+- (instancetype)initWithScreen:(UIScreen *)screen debugName:(NSString *)debug rootViewController:(UIViewController *)vc;
+- (void)setAutorotates:(BOOL)arg1 forceUpdateInterfaceOrientation:(BOOL)arg2;
+@end
+
+@interface MGWindow : SBWindow
+@end
 
 static UIWindow *gooseWindow;
 static void(^animationHandler)(MGGooseView *);
@@ -14,45 +24,76 @@ static void(^pullMemeFrameHandler)(MGGooseView *);
 static void(^finishMemeAnimation)(MGGooseView *);
 static void(^turnToUserAnimation)(MGGooseView *);
 static void(^loadMeme)(void);
-static MGImageContainerView *imageContainer;
+static __kindof MGContainerView *imageContainer;
 static NSInteger frameHandlerIndex;
 static NSArray *honks;
 static UIViewController *viewController;
+
+%subclass MGWindow : SBWindow
+
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
+	UIView *viewAtPoint = [self.rootViewController.view hitTest:point withEvent:event];
+	if (!viewAtPoint || (viewAtPoint == self.rootViewController.view)) return NO;
+	else return YES;
+}
+
+%end
 
 %hook SpringBoard
 
 - (void)applicationDidFinishLaunching:(id)application {
 	%orig;
-	gooseWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+	viewController = [MGViewController new];
+	gooseWindow = (UIWindow *)[(SBWindow *)[%c(MGWindow) alloc] initWithScreen:UIScreen.mainScreen debugName:@"MobileGoose" rootViewController:viewController];
+	[(SBWindow *)gooseWindow setAutorotates:YES forceUpdateInterfaceOrientation:NO];
 	gooseWindow.screen = [UIScreen mainScreen];
-	gooseWindow.userInteractionEnabled = NO;
+	gooseWindow.userInteractionEnabled = YES;
 	gooseWindow.opaque = NO;
 	gooseWindow.hidden = NO;
 	gooseWindow.backgroundColor = [UIColor clearColor];
-	gooseWindow.rootViewController = viewController = [UIViewController new];
 	gooseWindow.windowLevel = CGFLOAT_MAX - 1;
-	imageContainer = [[MGImageContainerView alloc] initWithFrame:CGRectMake(0, 0, 150, 150)];
-	imageContainer.hidden = YES;
 	[gooseWindow.rootViewController.view addSubview:imageContainer];
 	[gooseWindow makeKeyAndVisible];
-	[gooseWindow resignKeyWindow];
 	finishMemeAnimation = ^(MGGooseView *sender){
 		[sender removeFrameHandlerAtIndex:frameHandlerIndex];
 		sender.stopsAtEdge = YES;
+		imageContainer = nil;
 		turnToUserAnimation(sender);
 	};
 	loadMeme = ^{
-		NSString *path = @"/Library/Application Support/MobileGoose/Memes";
+		BOOL isImage = [imageContainer isKindOfClass:[MGImageContainerView class]];
+		NSString *path = [NSString
+			stringWithFormat:@"/Library/Application Support/MobileGoose/%@",
+			isImage ? @"Memes" : @"Notes"
+		];
 		NSArray *files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:path error:nil];
-		UIImage *image = nil;
-		if (files.count) {
-			NSString *fullImagePath = [path stringByAppendingPathComponent:files[arc4random_uniform(files.count)]];
-			image = [UIImage imageWithContentsOfFile:fullImagePath];
+		NSString *randomFile = files.count ? [path stringByAppendingPathComponent:files[arc4random_uniform(files.count)]] : nil;
+		if (isImage) {
+			UIImage *image = nil;
+			if (randomFile) {
+				image = [UIImage imageWithContentsOfFile:randomFile];
+			}
+			dispatch_async(dispatch_get_main_queue(), ^{
+				__kindof UIImageView *imageView = [(MGImageContainerView *)imageContainer imageView];
+				imageView.image = image;
+				[imageView setNeedsDisplay];
+			});
 		}
-		dispatch_async(dispatch_get_main_queue(), ^{
-			imageContainer.imageView.image = image;
-			[imageContainer.imageView setNeedsDisplay];
-		});
+		else {
+			NSString *text = nil;
+			if (files.count) {
+				__unused NSStringEncoding encoding;
+				text = [NSString
+					stringWithContentsOfFile:randomFile
+					usedEncoding:&encoding
+					error:nil
+				];
+			}
+			text = text ?: @"Could not load note";
+			dispatch_async(dispatch_get_main_queue(), ^{
+				[(MGTextContainerView *)imageContainer textLabel].text = text;
+			});
+		}
 	};
 	pullMemeFrameHandler = ^(MGGooseView *sender){
 		CGPoint center = imageContainer.center;
@@ -63,7 +104,12 @@ static UIViewController *viewController;
 		if (sender.frame.origin.x <= -15.0) {
 			[sender removeFrameHandlerAtIndex:frameHandlerIndex];
 			frameHandlerIndex = [sender addFrameHandler:pullMemeFrameHandler];
-			imageContainer.center = CGPointMake(-(imageContainer.frame.size.width/2.0), sender.center.y);
+			CGPoint point = CGPointMake(-(imageContainer.frame.size.width/2.0), sender.center.y);
+			CGFloat min = (imageContainer.frame.size.height / 2.0);
+			CGFloat max = (gooseWindow.rootViewController.view.frame.size.height - min);
+			if (point.y < min) point.y = min;
+			else if (point.y > max) point.y = max;
+			imageContainer.center = point;
 			imageContainer.hidden = NO;
 			dispatch_async(
 				dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0),
@@ -85,9 +131,25 @@ static UIViewController *viewController;
 			dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * ((double)arc4random_uniform(50) / 10.0)),
 			dispatch_get_main_queue(),
 			^{
-				uint8_t randomValue = arc4random_uniform(3);
-				if (randomValue == 1) findMeme(sender);
-				else walkHandler(sender);
+				uint8_t randomValue = arc4random_uniform(5);
+				Class cls = nil;
+				switch (randomValue) {
+					case 3:
+						cls = [MGImageContainerView class];
+						break;
+					case 4:
+						cls = [MGTextContainerView class];
+						break;
+					default:
+						walkHandler(sender);
+						return;
+				}
+				imageContainer = [[cls alloc] initWithFrame:CGRectMake(0,0,150,150)];
+				imageContainer.hidden = YES;
+				[gooseWindow.rootViewController.view
+					insertSubview:imageContainer
+					atIndex:0];
+				findMeme(sender);
 			}
 		);
 	};
@@ -117,7 +179,7 @@ static UIViewController *viewController;
 			arc4random_uniform(gooseWindow.rootViewController.view.frame.size.height - frame.size.height)
 		);
 		honk.frame = frame;
-		[gooseWindow.rootViewController.view addSubview:honk];
+		[gooseWindow.rootViewController.view insertSubview:honk atIndex:1];
 		[mHonks addObject:honk];
 		honk.facingTo = 0.0;
 		animationHandler(honk);
