@@ -1,6 +1,8 @@
 #import "MGGooseView.h"
 
+#ifndef DEG_TO_RAD
 #define DEG_TO_RAD(degress) ((degress) * M_PI / 180.0)
+#endif
 #define FPS 30.0
 
 @implementation MGGooseView
@@ -29,8 +31,8 @@ static UIColor *shadowColor;
 }
 
 - (void)drawRect:(CGRect)rect {
-	CGFloat facingToRadians = _facingTo * M_PI / 180.0;
-	CGFloat facingToDegrees = _facingTo;
+	CGFloat facingToDegrees = (_facingTo + -[[self._viewControllerForAncestor valueForKey:@"lastDegrees"] doubleValue]);
+	CGFloat facingToRadians = facingToDegrees * M_PI / 180.0;
 
 	// Shadow
 	[shadowColor setFill];

@@ -8,6 +8,9 @@
 		if (!_textLabel) return nil;
 		_textLabel.textColor = [UIColor colorWithWhite:0.0 alpha:0.5];
 		_textLabel.numberOfLines = 0;
+		_textLabel.font = [UIFont systemFontOfSize:20.0];
+		_textLabel.adjustsFontSizeToFitWidth = YES;
+		_textLabel.minimumScaleFactor = 0.1;
 		[self.contentView addSubview:_textLabel];
 	}
 	return self;

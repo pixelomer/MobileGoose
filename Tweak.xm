@@ -4,14 +4,10 @@
 #import <Goose/MGImageContainerView.h>
 #import <Goose/MGViewController.h>
 
-@interface SBWindow : UIWindow
-- (instancetype)initWithScreen:(UIScreen *)screen debugName:(NSString *)debug rootViewController:(UIViewController *)vc;
-- (void)setAutorotates:(BOOL)arg1 forceUpdateInterfaceOrientation:(BOOL)arg2;
+@interface MGWindow : UIWindow
 @end
 
-@interface MGWindow : SBWindow
-@end
-
+static CGAffineTransform transform;
 static UIWindow *gooseWindow;
 static void(^animationHandler)(MGGooseView *);
 static void(^animation2Handler)(MGGooseView *);
@@ -27,9 +23,9 @@ static void(^loadMeme)(void);
 static __kindof MGContainerView *imageContainer;
 static NSInteger frameHandlerIndex;
 static NSArray *honks;
-static UIViewController *viewController;
+static MGViewController *viewController;
 
-%subclass MGWindow : SBWindow
+%subclass MGWindow : UIWindow
 
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
 	UIView *viewAtPoint = [self.rootViewController.view hitTest:point withEvent:event];
@@ -39,14 +35,35 @@ static UIViewController *viewController;
 
 %end
 
+%hook MGViewController
+
+- (void)activeInterfaceOrientationDidChangeToOrientation:(long long)arg1 willAnimateWithDuration:(double)arg2 fromOrientation:(long long)arg3 {
+	transform = [self transformForOrientation:arg1];
+	for (UIView *view in viewController.view.subviews) {
+		view.transform = transform;
+	}
+	[UIView animateWithDuration:0.5 animations:^{
+		self.view.alpha = 1.0;
+	}];
+}
+
+- (void)activeInterfaceOrientationWillChangeToOrientation:(long long)arg1 {
+	[UIView animateWithDuration:0.5 animations:^{
+		self.view.alpha = 0.0;
+	}];
+}
+
+%end
+
 %hook SpringBoard
 
 - (void)applicationDidFinishLaunching:(id)application {
 	%orig;
 	viewController = [MGViewController new];
-	gooseWindow = (UIWindow *)[(SBWindow *)[%c(MGWindow) alloc] initWithScreen:UIScreen.mainScreen debugName:@"MobileGoose" rootViewController:viewController];
-	[(SBWindow *)gooseWindow setAutorotates:YES forceUpdateInterfaceOrientation:NO];
+	transform = [viewController transformForOrientation:UIInterfaceOrientationPortrait];
+	gooseWindow = (UIWindow *)[[%c(MGWindow) alloc] initWithFrame:UIScreen.mainScreen.bounds];
 	gooseWindow.screen = [UIScreen mainScreen];
+	gooseWindow.rootViewController = viewController;
 	gooseWindow.userInteractionEnabled = YES;
 	gooseWindow.opaque = NO;
 	gooseWindow.hidden = NO;
@@ -106,7 +123,7 @@ static UIViewController *viewController;
 			frameHandlerIndex = [sender addFrameHandler:pullMemeFrameHandler];
 			CGPoint point = CGPointMake(-(imageContainer.frame.size.width/2.0), sender.center.y);
 			CGFloat min = (imageContainer.frame.size.height / 2.0);
-			CGFloat max = (gooseWindow.rootViewController.view.frame.size.height - min);
+			CGFloat max = (gooseWindow.frame.size.height - min);
 			if (point.y < min) point.y = min;
 			else if (point.y > max) point.y = max;
 			imageContainer.center = point;
@@ -144,7 +161,8 @@ static UIViewController *viewController;
 						walkHandler(sender);
 						return;
 				}
-				imageContainer = [[cls alloc] initWithFrame:CGRectMake(0,0,150,150)];
+				imageContainer = [[cls alloc] initWithFrame:CGRectMake(0,0,125,125)];
+				imageContainer.transform = transform;
 				imageContainer.hidden = YES;
 				[gooseWindow.rootViewController.view
 					insertSubview:imageContainer
@@ -175,8 +193,8 @@ static UIViewController *viewController;
 		MGGooseView *honk = [[MGGooseView alloc] initWithFrame:frame];
 		frame.size = [honk sizeThatFits:frame.size];
 		frame.origin = CGPointMake(
-			arc4random_uniform(gooseWindow.rootViewController.view.frame.size.width - frame.size.width),
-			arc4random_uniform(gooseWindow.rootViewController.view.frame.size.height - frame.size.height)
+			arc4random_uniform(gooseWindow.frame.size.width - frame.size.width),
+			arc4random_uniform(gooseWindow.frame.size.height - frame.size.height)
 		);
 		honk.frame = frame;
 		[gooseWindow.rootViewController.view insertSubview:honk atIndex:1];
