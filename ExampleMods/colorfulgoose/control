@@ -1,0 +1,8 @@
+Package: com.pixelomer.colorfulgoose
+Name: ColorfulGoose
+Version: 1.0
+Architecture: iphoneos-arm
+Description: Add color to your goose
+Maintainer: PixelOmer
+Author: PixelOmer
+Section: Tweaks

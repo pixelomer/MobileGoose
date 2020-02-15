@@ -8,10 +8,12 @@
 @implementation MGGooseView
 
 static UIColor *shadowColor;
+static NSPointerArray *sharedFrameHandlers;
 
 + (void)initialize {
 	if (self == [MGGooseView class]) {
 		shadowColor = [UIColor colorWithWhite:0.25 alpha:0.25];
+		sharedFrameHandlers = [NSPointerArray strongObjectsPointerArray];
 	}
 }
 
@@ -33,6 +35,10 @@ static UIColor *shadowColor;
 - (void)notifyFrameHandlers:(MGGooseFrameState)state {
 	for (NSUInteger i=0; i<_frameHandlers.count; i++) {
 		MGGooseFrameHandler handler = (MGGooseFrameHandler)[_frameHandlers pointerAtIndex:i];
+		if (handler) handler(self, state);
+	}
+	for (NSUInteger i=0; i<sharedFrameHandlers.count; i++) {
+		MGGooseFrameHandler handler = (MGGooseFrameHandler)[sharedFrameHandlers pointerAtIndex:i];
 		if (handler) handler(self, state);
 	}
 }
@@ -335,6 +341,10 @@ static UIColor *shadowColor;
 
 - (instancetype)init {
 	return [self initWithFrame:CGRectZero];
+}
+
++ (void)addSharedFrameHandler:(MGGooseFrameHandler)handler {
+	[sharedFrameHandlers addPointer:(__bridge void *)handler];
 }
 
 @end

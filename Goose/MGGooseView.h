@@ -47,4 +47,5 @@ typedef void(^MGGooseCommonBlock)(MGGooseView *);
 - (NSUInteger)addFrameHandler:(MGGooseFrameHandler)handler;
 - (void)removeFrameHandlerAtIndex:(NSUInteger)index;
 - (BOOL)isFrameAtEdge:(CGRect)frame;
++ (void)addSharedFrameHandler:(MGGooseFrameHandler)handler;
 @end

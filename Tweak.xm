@@ -286,4 +286,13 @@ static void MGResetPreferences(
 		NULL,
 		0
 	);
+	NSString *dir = @"/Library/Application Support/MobileGoose/Mods";
+	NSArray *mods = [NSFileManager.defaultManager
+		contentsOfDirectoryAtPath:dir
+		error:nil
+	];
+	for (NSString *filename in mods) {
+		NSString *fullFilePath = [dir stringByAppendingPathComponent:filename];
+		dlopen(fullFilePath.UTF8String, RTLD_LAZY);
+	}
 }
