@@ -4,7 +4,20 @@
 #import <Goose/MGImageContainerView.h>
 #import <Goose/MGViewController.h>
 
+@interface NSUserDefaults(Private)
+- (id)objectForKey:(NSString *)key inDomain:(NSString *)domain;
+@end
+
+#define PrefValue(key) ([NSUserDefaults.standardUserDefaults \
+	objectForKey:key \
+	inDomain:@"com.pixelomer.mobilegoose" \
+])
+
 @interface MGWindow : UIWindow
+@end
+
+@interface SpringBoard : NSObject
+- (BOOL)isLocked;
 @end
 
 static CGAffineTransform transform;
@@ -20,11 +33,13 @@ static void(^pullMemeFrameHandler)(MGGooseView *, MGGooseFrameState state);
 static void(^finishMemeAnimation)(MGGooseView *);
 static void(^turnToUserAnimation)(MGGooseView *);
 static void(^loadMeme)(void);
+static BOOL(^shouldRenderFrameBlock)(MGGooseView *sender);
 static __kindof MGContainerView *imageContainer;
 static NSInteger frameHandlerIndex;
 static NSArray *honks;
 static NSPointerArray *containers;
 static MGViewController *viewController;
+static const CGFloat defaultSpeed = 2.6;
 
 %subclass MGWindow : UIWindow
 
@@ -85,6 +100,12 @@ static MGViewController *viewController;
 			isImage ? @"Memes" : @"Notes"
 		];
 		NSArray *files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:path error:nil];
+		if ([(((NSNumber *)PrefValue(@"DisableDefaultGifts")) ?: @NO) boolValue]) {
+			NSMutableArray *mFiles = files.mutableCopy;
+			[mFiles removeObject:@"DefaultMeme.png"];
+			[mFiles removeObject:@"DefaultNote.txt"];
+			files = mFiles.copy;
+		}
 		NSString *randomFile = files.count ? [path stringByAppendingPathComponent:files[arc4random_uniform(files.count)]] : nil;
 		if (isImage) {
 			UIImage *image = nil;
@@ -107,9 +128,11 @@ static MGViewController *viewController;
 					error:nil
 				];
 			}
-			text = text ?: @"Could not load note";
 			dispatch_async(dispatch_get_main_queue(), ^{
-				[(MGTextContainerView *)imageContainer textLabel].text = text;
+				[(MGTextContainerView *)imageContainer textLabel].text = text ?: @"Could not load note";
+				if (!text) {
+					[(MGTextContainerView *)imageContainer textLabel].font = [UIFont boldSystemFontOfSize:[(MGTextContainerView *)imageContainer textLabel].font.pointSize];
+				}
 			});
 		}
 	};
@@ -133,6 +156,7 @@ static MGViewController *viewController;
 				CGFloat max = (gooseWindow.frame.size.height - min);
 				if (point.y < min) point.y = min;
 				else if (point.y > max) point.y = max;
+				point.x += (((CGFloat)arc4random_uniform(150) / 10.0) - 7.5);
 				imageContainer.center = point;
 				imageContainer.hidden = NO;
 				dispatch_async(
@@ -159,18 +183,21 @@ static MGViewController *viewController;
 				uint8_t randomValue;
 				[containers compact];
 				if (containers.count >= 5) randomValue = 0;
-				else randomValue = arc4random_uniform(100);
+				else randomValue = arc4random_uniform(175);
 				Class cls = nil;
-				switch (randomValue) {
-					case 40 ... 44:
-						cls = [MGImageContainerView class];
-						break;
-					case 45 ... 49:
-						cls = [MGTextContainerView class];
-						break;
-					default:
-						walkHandler(sender);
-						return;
+				if ([(((NSNumber *)PrefValue(@"BringImages")) ?: @YES) boolValue] &&
+					(randomValue <= 44) && (randomValue >= 40))
+				{
+					cls = [MGImageContainerView class];
+				}
+				else if ([(((NSNumber *)PrefValue(@"BringNotes")) ?: @NO) boolValue] &&
+					(randomValue <= 49) && (randomValue >= 45))
+				{
+					cls = [MGTextContainerView class];
+				}
+				else {
+					walkHandler(sender);
+					return;
 				}
 				imageContainer = [[cls alloc] initWithFrame:CGRectMake(0,0,125,125)];
 				[containers addPointer:(__bridge void *)imageContainer];
@@ -184,7 +211,16 @@ static MGViewController *viewController;
 		);
 	};
 	walkHandler = ^(MGGooseView *sender){
-		[sender setFacingTo:(CGFloat)arc4random_uniform(360) animationCompletion:animationHandler];
+		CGRect frame;
+		CGFloat degrees = (CGFloat)arc4random_uniform(360);
+		do {
+			// Check if 
+			frame = sender.frame;
+			degrees += 10.0;
+			frame.origin.x += cos(DEG_TO_RAD(degrees)) * defaultSpeed * 5.0;
+			frame.origin.y += sin(DEG_TO_RAD(degrees)) * defaultSpeed * 5.0;
+		} while ([sender isFrameAtEdge:frame]);
+		[sender setFacingTo:degrees animationCompletion:animationHandler];
 	};
 	turnToUserAnimation = ^(MGGooseView *sender){
 		CGRect bounds = viewController.view.bounds;
@@ -195,8 +231,15 @@ static MGViewController *viewController;
 	animationHandler = ^(MGGooseView *sender){
 		[sender
 			walkForDuration:(NSTimeInterval)(arc4random_uniform(3)+1)
-			speed:2.6
-			completionHandler:turnToUserAnimation];
+			speed:defaultSpeed
+			completionHandler:turnToUserAnimation
+		];
+	};
+	shouldRenderFrameBlock = ^BOOL(MGGooseView *sender){
+		return !(
+			[(SpringBoard *)UIApplication.sharedApplication isLocked] ||
+			![(PrefValue(@"Enabled") ?: @YES) boolValue]
+		);
 	};
 	containers = [NSPointerArray weakObjectsPointerArray];
 	NSMutableArray *mHonks = [NSMutableArray new];
@@ -204,6 +247,7 @@ static MGViewController *viewController;
 	for (NSInteger i=0; i<gooseCount; i++) {
 		CGRect frame = CGRectMake(0, 0, 0, 0);
 		MGGooseView *honk = [[MGGooseView alloc] initWithFrame:frame];
+		honk.shouldRenderFrameBlock = shouldRenderFrameBlock;
 		frame.size = [honk sizeThatFits:frame.size];
 		frame.origin = CGPointMake(
 			arc4random_uniform(gooseWindow.frame.size.width - frame.size.width),
@@ -220,3 +264,26 @@ static MGViewController *viewController;
 }
 
 %end
+
+static void MGResetPreferences(
+	CFNotificationCenterRef center,
+	void *observer,
+	CFNotificationName name,
+	const void *object,
+	CFDictionaryRef userInfo
+) {
+	void(^block)() = ^{gooseWindow.hidden = ![(PrefValue(@"Enabled") ?: @YES) boolValue];};
+	if ([NSThread isMainThread]) block();
+	else dispatch_async(dispatch_get_main_queue(), block);
+}
+
+%ctor {
+	CFNotificationCenterAddObserver(
+		CFNotificationCenterGetDarwinNotifyCenter(),
+		NULL,
+		&MGResetPreferences,
+		CFSTR("com.pixelomer.mobilegoose/PreferenceChange"),
+		NULL,
+		0
+	);
+}

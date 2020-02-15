@@ -52,9 +52,14 @@ static UIColor *shadowColor;
 }
 
 - (void)drawRect:(CGRect)rect {
+	// If shouldRenderFrameBlock() returns NO, don't drawRect
+	if (_shouldRenderFrameBlock && !_shouldRenderFrameBlock(self)) return;
+
+	// Initialize state stuff for mods
 	int state = 0;
 	[self notifyFrameHandlers:MGGooseWillStartDrawing];
 
+	// Radians, degrees, etc.
 	CGFloat facingToDegrees = (_facingTo + -[[self._viewControllerForAncestor valueForKey:@"lastDegrees"] doubleValue]);
 	CGFloat facingToRadians = facingToDegrees * M_PI / 180.0;
 
@@ -228,12 +233,13 @@ static UIColor *shadowColor;
 	[_frameHandlers replacePointerAtIndex:index withPointer:NULL];
 }
 
-- (void)setFacingTo:(CGFloat)degrees animationCompletion:(void(^)(MGGooseView *))completion {
+- (void)setFacingTo:(CGFloat)degrees animationCompletion:(MGGooseCommonBlock)completion {
 	_targetFacingTo = degrees;
+	_targetFacingTo -= floor(_targetFacingTo / 360.0) * 360.0;
 	_animationCompletion = completion;
 }
 
-- (void)walkForDuration:(NSTimeInterval)duration speed:(CGFloat)multiplier completionHandler:(void(^)(MGGooseView *))completion {
+- (void)walkForDuration:(NSTimeInterval)duration speed:(CGFloat)multiplier completionHandler:(MGGooseCommonBlock)completion {
 	_remainingFramesUntilCompletion = duration * FPS;
 	_walkCompletion = completion;
 	_walkingState = (multiplier >= 0.0) ? 3 : 2;
@@ -241,6 +247,10 @@ static UIColor *shadowColor;
 }
 
 - (void)timer:(id)unused {
+	// If shouldRenderFrameBlock() returns NO, don't drawRect
+	if (_shouldRenderFrameBlock && !_shouldRenderFrameBlock(self)) return;
+
+	// If _targetFacingTo is positive, continue the turning animation
 	if (_targetFacingTo >= 0.0) {
 		CGFloat change;
 		if (_targetFacingTo > _facingTo) change = 1.0;
@@ -251,7 +261,7 @@ static UIColor *shadowColor;
 			_targetFacingTo = -1.0;
 			if (_animationCompletion) {
 				// Completion handler might set _animationCompletion itself.
-				void(^completion)(MGGooseView *) = _animationCompletion;
+				MGGooseCommonBlock completion = _animationCompletion;
 				_animationCompletion = nil;
 				completion(self);
 			}
@@ -263,6 +273,8 @@ static UIColor *shadowColor;
 			_facingTo += change;
 		}
 	}
+
+	// If _remainingFramesUntilCompletion is not -1, continue walking
 	CGRect oldFrame = self.frame;
 	if (_remainingFramesUntilCompletion != -1) {
 		CGRect frame = self.frame;
@@ -285,16 +297,22 @@ static UIColor *shadowColor;
 			self.frame = frame;
 		}
 	}
+
+	// If the goose finished walking, call the completion handler
 	if ((_remainingFramesUntilCompletion == -1) && _walkCompletion) {
-		void(^completion)(MGGooseView *) = _walkCompletion;
+		MGGooseCommonBlock completion = _walkCompletion;
 		_walkCompletion = nil;
 		completion(self);
 	}
-	if (_facingTo >= 360.0) {
-		_facingTo = 0.0;
-	}
+
+	// _facingTo has to be in the (0 ... 360) range
+	_facingTo -= floor(_facingTo / 360.0) * 360.0;
+
+	// Set the position change variable
 	_positionChange.x = self.frame.origin.x - oldFrame.origin.x;
 	_positionChange.y = self.frame.origin.y - oldFrame.origin.y;
+
+	// Set the "needs display" flag so that drawRect: is called
 	[self setNeedsDisplay];
 }
 

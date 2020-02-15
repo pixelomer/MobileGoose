@@ -1,4 +1,6 @@
 INSTALL_TARGET_PROCESSES = SpringBoard
+TARGET = iphone:11.2:8.0
+export TARGET
 
 include $(THEOS)/makefiles/common.mk
 
@@ -9,3 +11,5 @@ MobileGoose_FILES = Tweak.xm $(wildcard */*.mm)
 MobileGoose_CFLAGS = -fobjc-arc -I. -include macros.h
 
 include $(THEOS_MAKE_PATH)/tweak.mk
+SUBPROJECTS += Prefs
+include $(THEOS_MAKE_PATH)/aggregate.mk

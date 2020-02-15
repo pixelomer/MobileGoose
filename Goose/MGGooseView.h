@@ -1,5 +1,7 @@
 #import <UIKit/UIKit.h>
 
+// ALL of the methods in this class MUST be called on the main thread.
+
 @class MGGooseView;
 
 typedef NS_ENUM(NSInteger, MGGooseFrameState) {
@@ -15,6 +17,7 @@ typedef NS_ENUM(NSInteger, MGGooseFrameState) {
 	#undef e
 };
 typedef void(^MGGooseFrameHandler)(MGGooseView *, MGGooseFrameState);
+typedef void(^MGGooseCommonBlock)(MGGooseView *);
 
 // Do you think I'm using the wrong terms in variable names? If so,
 // feel free to make a pull request that fixes it.
@@ -26,20 +29,22 @@ typedef void(^MGGooseFrameHandler)(MGGooseView *, MGGooseFrameState);
 	NSInteger _walkingState;
 	CGFloat _targetFacingTo;
 	NSInteger _remainingFramesUntilCompletion;
-	void(^_walkCompletion)(MGGooseView *);
-	void(^_animationCompletion)(MGGooseView *);
+	MGGooseCommonBlock _walkCompletion;
+	MGGooseCommonBlock _animationCompletion;
 	CGFloat _walkMultiplier;
 	NSPointerArray *_frameHandlers;
 }
+@property (nonatomic, strong) BOOL(^shouldRenderFrameBlock)(MGGooseView *);
 @property (nonatomic, assign) CGFloat facingTo;
 @property (nonatomic, assign) BOOL stopsAtEdge;
 @property (nonatomic, assign, readonly) CGPoint positionChange;
 @property (nonatomic, assign) BOOL autoResetFeet;
 - (void)walkForDuration:(NSTimeInterval)duration
 	speed:(CGFloat)speed
-	completionHandler:(void(^)(MGGooseView *))completion;
+	completionHandler:(MGGooseCommonBlock)completion;
 - (void)setFacingTo:(CGFloat)degress
-	animationCompletion:(void(^)(MGGooseView *))completion;
+	animationCompletion:(MGGooseCommonBlock)completion;
 - (NSUInteger)addFrameHandler:(MGGooseFrameHandler)handler;
 - (void)removeFrameHandlerAtIndex:(NSUInteger)index;
+- (BOOL)isFrameAtEdge:(CGRect)frame;
 @end
