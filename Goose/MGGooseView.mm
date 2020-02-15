@@ -30,12 +30,37 @@ static UIColor *shadowColor;
 	return CGSizeMake(80, 80);
 }
 
+- (void)notifyFrameHandlers:(MGGooseFrameState)state {
+	for (NSUInteger i=0; i<_frameHandlers.count; i++) {
+		MGGooseFrameHandler handler = (MGGooseFrameHandler)[_frameHandlers pointerAtIndex:i];
+		if (handler) handler(self, state);
+	}
+}
+
+- (void)advanceDrawingState:(int *)state {
+	if (!state) return;
+	static const int stateOrder[] = { -1, 1, 2, 3, 4, 6, 5, -1 };
+	if (stateOrder[*state] >= 0) {
+		// Did draw
+		[self notifyFrameHandlers:stateOrder[*state]];
+	}
+	(*state)++;
+	if (stateOrder[*state] >= 0) {
+		// Will draw
+		[self notifyFrameHandlers:(stateOrder[*state] | 0b10000000)];
+	}
+}
+
 - (void)drawRect:(CGRect)rect {
+	int state = 0;
+	[self notifyFrameHandlers:MGGooseWillStartDrawing];
+
 	CGFloat facingToDegrees = (_facingTo + -[[self._viewControllerForAncestor valueForKey:@"lastDegrees"] doubleValue]);
 	CGFloat facingToRadians = facingToDegrees * M_PI / 180.0;
 
 	// Shadow
 	[shadowColor setFill];
+	[self advanceDrawingState:&state];
 	CGRect shadowBounds = CGRectMake(20, 30, 30, 30);
 	@autoreleasepool {
 		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:shadowBounds];
@@ -44,6 +69,7 @@ static UIColor *shadowColor;
 
 	// Feet
 	[[UIColor orangeColor] setFill];
+	[self advanceDrawingState:&state];
 	@autoreleasepool {
 		CGFloat change = (_walkMultiplier / 2.6);
 		switch (_walkingState) {
@@ -100,6 +126,7 @@ static UIColor *shadowColor;
 	
 	// Body
 	[[UIColor whiteColor] setFill];
+	[self advanceDrawingState:&state];
 	@autoreleasepool {
 		CGRect oval1Rect = CGRectMake(25, 20, 20, 20);
 		UIBezierPath *oval1 = [UIBezierPath bezierPathWithOvalInRect:oval1Rect];
@@ -114,6 +141,8 @@ static UIColor *shadowColor;
 	}
 	
 	// Neck
+	[[UIColor whiteColor] setFill];
+	[self advanceDrawingState:&state];
 	@autoreleasepool {
 		// Create a rect without the correct position
 		const CGFloat neckHeight = 10;
@@ -139,6 +168,8 @@ static UIColor *shadowColor;
 	}
 	
 	// Face
+	[[UIColor orangeColor] setFill];
+	[self advanceDrawingState:&state];
 	@autoreleasepool {
 		// Create a rect without the correct position
 		const CGFloat beakSize = 8.0;
@@ -149,14 +180,15 @@ static UIColor *shadowColor;
 		rect.origin.x += 21.0 + (beakRadius * cos(facingToRadians));
 		rect.origin.y += 4.5 + (beakRadius * sin(facingToRadians));
 		
-		[[UIColor orangeColor] setFill];
 		UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:rect];
 		[path fill];
+
+		[[UIColor blackColor] setFill];
+		[self advanceDrawingState:&state];
 		
 		const CGFloat eyeSize = beakSize * 0.6;
 		const CGFloat eyeRadius = beakRadius - 3.0;
 		rect.size.height = rect.size.width = eyeSize;
-		[[UIColor blackColor] setFill];
 		for (int8_t i=0, offset=15; i<2; i+=1.0) {
 			rect.origin.x = 32.5 + (eyeRadius * cos(DEG_TO_RAD(facingToDegrees + offset)));
 			rect.origin.y = 24.5 + (eyeRadius * sin(DEG_TO_RAD(facingToDegrees + offset)));
@@ -164,16 +196,14 @@ static UIColor *shadowColor;
 			[path fill];
 			offset = -offset;
 		}
+		[self advanceDrawingState:&state];
 	}
 	if (_remainingFramesUntilCompletion == 0) _walkingState = 0;
 	if (_remainingFramesUntilCompletion >= 0) _remainingFramesUntilCompletion--;
-	for (NSUInteger i=0; i<_frameHandlers.count; i++) {
-		void(^handler)(MGGooseView *) = (typeof(handler))[_frameHandlers pointerAtIndex:i];
-		if (handler) handler(self);
-	}
+	[self notifyFrameHandlers:MGGooseDidFinishDrawing];
 }
 
-- (NSUInteger)addFrameHandler:(void(^)(MGGooseView *))handler {
+- (NSUInteger)addFrameHandler:(MGGooseFrameHandler)handler {
 	for (NSUInteger i=0; i<_frameHandlers.count; i++) {
 		if (![_frameHandlers pointerAtIndex:i]) {
 			[_frameHandlers replacePointerAtIndex:i withPointer:(__bridge void *)handler];
@@ -182,6 +212,16 @@ static UIColor *shadowColor;
 	}
 	[_frameHandlers addPointer:(__bridge void *)handler];
 	return _frameHandlers.count - 1;
+}
+
+- (BOOL)isFrameAtEdge:(CGRect)frame {
+	CGRect screenBounds = self._viewControllerForAncestor.view.bounds;
+	return (
+		((frame.origin.x + frame.size.width) >= (screenBounds.size.width - 1)) ||
+		((frame.origin.y + frame.size.height) >= (screenBounds.size.height - 1)) ||
+		(frame.origin.x <= 1) ||
+		(frame.origin.y <= 1)
+	);
 }
 
 - (void)removeFrameHandlerAtIndex:(NSUInteger)index {
@@ -228,13 +268,7 @@ static UIColor *shadowColor;
 		CGRect frame = self.frame;
 		frame.origin.x += cos(DEG_TO_RAD(_facingTo)) * _walkMultiplier;
 		frame.origin.y += sin(DEG_TO_RAD(_facingTo)) * _walkMultiplier;
-		CGRect screenBounds = self._viewControllerForAncestor.view.bounds;
-		if (_stopsAtEdge &&
-			(((frame.origin.x + frame.size.width) >= (screenBounds.size.width - 1)) ||
-			((frame.origin.y + frame.size.height) >= (screenBounds.size.height - 1)) ||
-			(frame.origin.x <= 1) ||
-			(frame.origin.y <= 1))
-		) {
+		if (_stopsAtEdge && [self isFrameAtEdge:frame]) {
 			_remainingFramesUntilCompletion = -1;
 			_walkingState = 0;
 		}

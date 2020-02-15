@@ -14,15 +14,16 @@ static void(^animation2Handler)(MGGooseView *);
 static void(^showMeme)(MGGooseView *);
 static void(^walkHandler)(MGGooseView *);
 static void(^findMeme)(MGGooseView *);
-static void(^gotoMemeFrameHandler)(MGGooseView *);
+static void(^gotoMemeFrameHandler)(MGGooseView *, MGGooseFrameState state);
 static void(^turnToMemeHandler)(MGGooseView *);
-static void(^pullMemeFrameHandler)(MGGooseView *);
+static void(^pullMemeFrameHandler)(MGGooseView *, MGGooseFrameState state);
 static void(^finishMemeAnimation)(MGGooseView *);
 static void(^turnToUserAnimation)(MGGooseView *);
 static void(^loadMeme)(void);
 static __kindof MGContainerView *imageContainer;
 static NSInteger frameHandlerIndex;
 static NSArray *honks;
+static NSPointerArray *containers;
 static MGViewController *viewController;
 
 %subclass MGWindow : UIWindow
@@ -112,27 +113,34 @@ static MGViewController *viewController;
 			});
 		}
 	};
-	pullMemeFrameHandler = ^(MGGooseView *sender){
-		CGPoint center = imageContainer.center;
-		center.x += sender.positionChange.x;
-		imageContainer.center = center;
+	pullMemeFrameHandler = ^(MGGooseView *sender, MGGooseFrameState state){
+		if (state == MGGooseDidFinishDrawing) {
+			CGPoint center = imageContainer.center;
+			center.x += sender.positionChange.x;
+			imageContainer.center = center;
+		}
 	};
-	gotoMemeFrameHandler = ^(MGGooseView *sender){
-		if (sender.frame.origin.x <= -15.0) {
-			[sender removeFrameHandlerAtIndex:frameHandlerIndex];
-			frameHandlerIndex = [sender addFrameHandler:pullMemeFrameHandler];
-			CGPoint point = CGPointMake(-(imageContainer.frame.size.width/2.0), sender.center.y);
-			CGFloat min = (imageContainer.frame.size.height / 2.0);
-			CGFloat max = (gooseWindow.frame.size.height - min);
-			if (point.y < min) point.y = min;
-			else if (point.y > max) point.y = max;
-			imageContainer.center = point;
-			imageContainer.hidden = NO;
-			dispatch_async(
-				dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0),
-				loadMeme
-			);
-			[sender walkForDuration:3.0 speed:-2.0 completionHandler:finishMemeAnimation];
+	gotoMemeFrameHandler = ^(MGGooseView *sender, MGGooseFrameState state){
+		if (state == MGGooseDidFinishDrawing) {
+			if (/* (cond) ? */
+				(sender.frame.origin.x <= -15.0)/* :
+				(sender.frame.origin.x >= (gooseWindow.frame.size.width - sender.frame.size.width + 15.0))
+			*/) {
+				[sender removeFrameHandlerAtIndex:frameHandlerIndex];
+				frameHandlerIndex = [sender addFrameHandler:pullMemeFrameHandler];
+				CGPoint point = CGPointMake(-(imageContainer.frame.size.width/2.0), sender.center.y);
+				CGFloat min = (imageContainer.frame.size.height / 2.0);
+				CGFloat max = (gooseWindow.frame.size.height - min);
+				if (point.y < min) point.y = min;
+				else if (point.y > max) point.y = max;
+				imageContainer.center = point;
+				imageContainer.hidden = NO;
+				dispatch_async(
+					dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0),
+					loadMeme
+				);
+				[sender walkForDuration:(3.0 + ((NSTimeInterval)arc4random_uniform(25) / 10.0)) speed:-2.0 completionHandler:finishMemeAnimation];
+			}
 		}
 	};
 	turnToMemeHandler = ^(MGGooseView *sender){
@@ -148,13 +156,16 @@ static MGViewController *viewController;
 			dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * ((double)arc4random_uniform(50) / 10.0)),
 			dispatch_get_main_queue(),
 			^{
-				uint8_t randomValue = arc4random_uniform(5);
+				uint8_t randomValue;
+				[containers compact];
+				if (containers.count >= 5) randomValue = 0;
+				else randomValue = arc4random_uniform(100);
 				Class cls = nil;
 				switch (randomValue) {
-					case 3:
+					case 40 ... 44:
 						cls = [MGImageContainerView class];
 						break;
-					case 4:
+					case 45 ... 49:
 						cls = [MGTextContainerView class];
 						break;
 					default:
@@ -162,6 +173,7 @@ static MGViewController *viewController;
 						return;
 				}
 				imageContainer = [[cls alloc] initWithFrame:CGRectMake(0,0,125,125)];
+				[containers addPointer:(__bridge void *)imageContainer];
 				imageContainer.transform = transform;
 				imageContainer.hidden = YES;
 				[gooseWindow.rootViewController.view
@@ -186,6 +198,7 @@ static MGViewController *viewController;
 			speed:2.6
 			completionHandler:turnToUserAnimation];
 	};
+	containers = [NSPointerArray weakObjectsPointerArray];
 	NSMutableArray *mHonks = [NSMutableArray new];
 	const NSInteger gooseCount = 1;
 	for (NSInteger i=0; i<gooseCount; i++) {
@@ -197,7 +210,7 @@ static MGViewController *viewController;
 			arc4random_uniform(gooseWindow.frame.size.height - frame.size.height)
 		);
 		honk.frame = frame;
-		[gooseWindow.rootViewController.view insertSubview:honk atIndex:1];
+		[gooseWindow.rootViewController.view insertSubview:honk atIndex:NSIntegerMax];
 		[mHonks addObject:honk];
 		honk.facingTo = 0.0;
 		animationHandler(honk);
