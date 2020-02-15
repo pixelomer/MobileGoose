@@ -90,6 +90,7 @@ static const CGFloat defaultSpeed = 2.6;
 	finishMemeAnimation = ^(MGGooseView *sender){
 		[sender removeFrameHandlerAtIndex:frameHandlerIndex];
 		sender.stopsAtEdge = YES;
+		imageContainer.userInteractionEnabled = YES;
 		imageContainer = nil;
 		turnToUserAnimation(sender);
 	};
@@ -163,7 +164,7 @@ static const CGFloat defaultSpeed = 2.6;
 					dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0),
 					loadMeme
 				);
-				[sender walkForDuration:(3.0 + ((NSTimeInterval)arc4random_uniform(25) / 10.0)) speed:-2.0 completionHandler:finishMemeAnimation];
+				[sender walkForDuration:(3.0 + ((NSTimeInterval)arc4random_uniform(15) / 10.0)) speed:-2.0 completionHandler:finishMemeAnimation];
 			}
 		}
 	};
@@ -200,6 +201,7 @@ static const CGFloat defaultSpeed = 2.6;
 					return;
 				}
 				imageContainer = [[cls alloc] initWithFrame:CGRectMake(0,0,125,125)];
+				imageContainer.userInteractionEnabled = NO;
 				[containers addPointer:(__bridge void *)imageContainer];
 				imageContainer.transform = transform;
 				imageContainer.hidden = YES;
