@@ -42,6 +42,7 @@ static UIColor *backgroundColor;
 				[self removeFromSuperview];
 			}
 		];
+		self.userInteractionEnabled = NO;
 	}
 }
 
