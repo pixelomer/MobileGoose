@@ -1,7 +1,7 @@
 INSTALL_TARGET_PROCESSES = SpringBoard
 TARGET = iphone:11.2:8.0
 ARCHS = arm64 arm64e armv7
-export TARGET
+export TARGET ARCHS
 
 include $(THEOS)/makefiles/common.mk
 
