@@ -35,6 +35,7 @@ static void(^turnToUserAnimation)(MGGooseView *);
 static void(^loadMeme)(void);
 static BOOL(^shouldRenderFrameBlock)(MGGooseView *sender);
 static __kindof MGContainerView *imageContainer;
+static BOOL getMemeFromTheLeft;
 static NSInteger frameHandlerIndex;
 static NSArray *honks;
 static NSPointerArray *containers;
@@ -90,7 +91,6 @@ static const CGFloat defaultSpeed = 2.6;
 	finishMemeAnimation = ^(MGGooseView *sender){
 		[sender removeFrameHandlerAtIndex:frameHandlerIndex];
 		sender.stopsAtEdge = YES;
-		imageContainer.userInteractionEnabled = YES;
 		imageContainer = nil;
 		turnToUserAnimation(sender);
 	};
@@ -146,18 +146,19 @@ static const CGFloat defaultSpeed = 2.6;
 	};
 	gotoMemeFrameHandler = ^(MGGooseView *sender, MGGooseFrameState state){
 		if (state == MGGooseDidFinishDrawing) {
-			if (/* (cond) ? */
-				(sender.frame.origin.x <= -15.0)/* :
-				(sender.frame.origin.x >= (gooseWindow.frame.size.width - sender.frame.size.width + 15.0))
-			*/) {
+			if ((getMemeFromTheLeft) ?
+				(sender.frame.origin.x <= -15.0) :
+				(sender.frame.origin.x >= (gooseWindow.frame.size.width - sender.frame.size.width + 26.0)))
+			{
 				[sender removeFrameHandlerAtIndex:frameHandlerIndex];
 				frameHandlerIndex = [sender addFrameHandler:pullMemeFrameHandler];
 				CGPoint point = CGPointMake(-(imageContainer.frame.size.width/2.0), sender.center.y);
 				CGFloat min = (imageContainer.frame.size.height / 2.0);
 				CGFloat max = (gooseWindow.frame.size.height - min);
+				point.y += (((CGFloat)arc4random_uniform(100) / 10.0) - 7.5);
 				if (point.y < min) point.y = min;
 				else if (point.y > max) point.y = max;
-				point.x += (((CGFloat)arc4random_uniform(150) / 10.0) - 7.5);
+				if (!getMemeFromTheLeft) point.x += (imageContainer.frame.size.width + gooseWindow.frame.size.width);
 				imageContainer.center = point;
 				imageContainer.hidden = NO;
 				dispatch_async(
@@ -174,17 +175,16 @@ static const CGFloat defaultSpeed = 2.6;
 		[sender walkForDuration:-1 speed:4.8 completionHandler:nil];
 	};
 	findMeme = ^(MGGooseView *sender){
-		[sender setFacingTo:180.0 animationCompletion:turnToMemeHandler];
+		[sender setFacingTo:(!!getMemeFromTheLeft * 180.0) animationCompletion:turnToMemeHandler];
 	};
 	animation2Handler = ^(MGGooseView *sender){
 		dispatch_after(
 			dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * ((double)arc4random_uniform(50) / 10.0)),
 			dispatch_get_main_queue(),
 			^{
-				uint8_t randomValue;
+				uint8_t randomValue = arc4random_uniform(50);
 				[containers compact];
-				if (containers.count >= 5) randomValue = 0;
-				else randomValue = arc4random_uniform(175);
+				if ((containers.count >= 5) && (randomValue >= 40)) randomValue += 10;
 				Class cls = nil;
 				if ([(((NSNumber *)PrefValue(@"BringImages")) ?: @YES) boolValue] &&
 					(randomValue <= 44) && (randomValue >= 40))
@@ -201,13 +201,13 @@ static const CGFloat defaultSpeed = 2.6;
 					return;
 				}
 				imageContainer = [[cls alloc] initWithFrame:CGRectMake(0,0,125,125)];
-				imageContainer.userInteractionEnabled = NO;
 				[containers addPointer:(__bridge void *)imageContainer];
 				imageContainer.transform = transform;
 				imageContainer.hidden = YES;
-				[gooseWindow.rootViewController.view
-					insertSubview:imageContainer
-					atIndex:0];
+				[containers compact];
+				[gooseWindow.rootViewController.view addSubview:imageContainer];
+				imageContainer.layer.zPosition = containers.count;
+				getMemeFromTheLeft = arc4random_uniform(2);
 				findMeme(sender);
 			}
 		);
@@ -256,7 +256,8 @@ static const CGFloat defaultSpeed = 2.6;
 			arc4random_uniform(gooseWindow.frame.size.height - frame.size.height)
 		);
 		honk.frame = frame;
-		[gooseWindow.rootViewController.view insertSubview:honk atIndex:NSIntegerMax];
+		[gooseWindow.rootViewController.view addSubview:honk];
+		honk.layer.zPosition = 100;
 		[mHonks addObject:honk];
 		honk.facingTo = 0.0;
 		animationHandler(honk);
