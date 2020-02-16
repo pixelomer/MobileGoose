@@ -8,12 +8,12 @@
 @implementation MGGooseView
 
 static UIColor *shadowColor;
-static NSPointerArray *sharedFrameHandlers;
+static NSMutableArray *sharedFrameHandlers;
 
 + (void)initialize {
 	if (self == [MGGooseView class]) {
 		shadowColor = [UIColor colorWithWhite:0.25 alpha:0.25];
-		sharedFrameHandlers = [NSPointerArray strongObjectsPointerArray];
+		sharedFrameHandlers = [NSMutableArray new];
 	}
 }
 
@@ -33,13 +33,19 @@ static NSPointerArray *sharedFrameHandlers;
 }
 
 - (void)notifyFrameHandlers:(MGGooseFrameState)state {
-	for (NSUInteger i=0; i<_frameHandlers.count; i++) {
-		MGGooseFrameHandler handler = (MGGooseFrameHandler)[_frameHandlers pointerAtIndex:i];
-		if (handler) handler(self, state);
-	}
-	for (NSUInteger i=0; i<sharedFrameHandlers.count; i++) {
-		MGGooseFrameHandler handler = (MGGooseFrameHandler)[sharedFrameHandlers pointerAtIndex:i];
-		if (handler) handler(self, state);
+	for (id thing in [_frameHandlers arrayByAddingObjectsFromArray:sharedFrameHandlers]) {
+		if ([thing isKindOfClass:[NSNull class]]) {}
+		else if ([thing isKindOfClass:[NSInvocation class]]) {
+			NSInvocation *invocation = (NSInvocation *)thing;
+			[invocation setArgument:&state atIndex:3];
+			MGGooseView *_self = self;
+			[invocation setArgument:&_self atIndex:2];
+			[invocation invoke];
+		}
+		else {
+			MGGooseFrameHandler handler = (MGGooseFrameHandler)thing;
+			handler(self, state);
+		}
 	}
 }
 
@@ -216,12 +222,12 @@ static NSPointerArray *sharedFrameHandlers;
 
 - (NSUInteger)addFrameHandler:(MGGooseFrameHandler)handler {
 	for (NSUInteger i=0; i<_frameHandlers.count; i++) {
-		if (![_frameHandlers pointerAtIndex:i]) {
-			[_frameHandlers replacePointerAtIndex:i withPointer:(__bridge void *)handler];
+		if ([[_frameHandlers objectAtIndex:i] isKindOfClass:[NSNull class]]) {
+			_frameHandlers[i] = handler;
 			return i;
 		}
 	}
-	[_frameHandlers addPointer:(__bridge void *)handler];
+	[_frameHandlers addObject:handler];
 	return _frameHandlers.count - 1;
 }
 
@@ -236,7 +242,30 @@ static NSPointerArray *sharedFrameHandlers;
 }
 
 - (void)removeFrameHandlerAtIndex:(NSUInteger)index {
-	[_frameHandlers replacePointerAtIndex:index withPointer:NULL];
+	_frameHandlers[index] = [NSNull null];
+}
+
+- (NSUInteger)addFrameHandlerWithTarget:(id)target action:(SEL)action {
+	NSInvocation *invocation = [NSInvocation
+		invocationWithMethodSignature:[NSMethodSignature signatureWithObjCTypes:[NSString
+			stringWithFormat:@"%s%s%s%s%s",
+			@encode(void),
+			@encode(id),
+			@encode(SEL),
+			@encode(id),
+			@encode(NSInteger)
+		].UTF8String]
+	];
+	invocation.target = target;
+	invocation.selector = action;
+	for (NSUInteger i=0; i<_frameHandlers.count; i++) {
+		if ([[_frameHandlers objectAtIndex:i] isKindOfClass:[NSNull class]]) {
+			_frameHandlers[i] = invocation;
+			return i;
+		}
+	}
+	[_frameHandlers addObject:invocation];
+	return _frameHandlers.count - 1;
 }
 
 - (void)setFacingTo:(CGFloat)degrees animationCompletion:(MGGooseCommonBlock)completion {
@@ -336,7 +365,7 @@ static NSPointerArray *sharedFrameHandlers;
 		_walkingState = 0;
 		_facingTo = 45.0;
 		_remainingFramesUntilCompletion = -1;
-		_frameHandlers = [NSPointerArray strongObjectsPointerArray];
+		_frameHandlers = [NSMutableArray new];
 		_targetFacingTo = -1.0;
 		_foot2Y = 36.0;
 		_stopsAtEdge = YES;
@@ -350,7 +379,7 @@ static NSPointerArray *sharedFrameHandlers;
 }
 
 + (void)addSharedFrameHandler:(MGGooseFrameHandler)handler {
-	[sharedFrameHandlers addPointer:(__bridge void *)handler];
+	[sharedFrameHandlers addObject:handler];
 }
 
 @end

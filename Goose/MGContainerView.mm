@@ -25,17 +25,16 @@ static UIColor *backgroundColor;
 		if (!_contentView) return nil;
 		[self addSubview:_visualEffect];
 		[self addSubview:_contentView];
-		_gestureRecognizer = [[UITapGestureRecognizer alloc]
+		UITapGestureRecognizer *gestureRecognizer = [[UITapGestureRecognizer alloc]
 			initWithTarget:self
 			action:@selector(handleTap:)
 		];
-		[self addGestureRecognizer:_gestureRecognizer];
+		[self addGestureRecognizer:gestureRecognizer];
 	}
 	return self;
 }
 
-- (void)handleTap:(UITapGestureRecognizer *)sender
-{
+- (void)handleTap:(UITapGestureRecognizer *)sender {
 	if (sender.state == UIGestureRecognizerStateEnded) {
 		[UIView
 			animateWithDuration:0.5

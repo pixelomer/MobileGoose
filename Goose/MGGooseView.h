@@ -32,7 +32,7 @@ typedef void(^MGGooseCommonBlock)(MGGooseView *);
 	MGGooseCommonBlock _walkCompletion;
 	MGGooseCommonBlock _animationCompletion;
 	CGFloat _walkMultiplier;
-	NSPointerArray *_frameHandlers;
+	NSMutableArray *_frameHandlers;
 }
 @property (nonatomic, strong) BOOL(^shouldRenderFrameBlock)(MGGooseView *);
 @property (nonatomic, assign) CGFloat facingTo;
@@ -46,7 +46,9 @@ typedef void(^MGGooseCommonBlock)(MGGooseView *);
 	animationCompletion:(MGGooseCommonBlock)completion;
 - (void)stopWalking;
 - (NSUInteger)addFrameHandler:(MGGooseFrameHandler)handler;
+- (NSUInteger)addFrameHandlerWithTarget:(id)target action:(SEL)action;
 - (void)removeFrameHandlerAtIndex:(NSUInteger)index;
 - (BOOL)isFrameAtEdge:(CGRect)frame;
 + (void)addSharedFrameHandler:(MGGooseFrameHandler)handler;
+//+ (void)addSharedFrameHandlerWithTarget:(id)target action:(SEL)action;
 @end

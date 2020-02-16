@@ -9,7 +9,7 @@ TWEAK_NAME = MobileGoose
 
 MobileGoose_FRAMEWORKS = UIKit Foundation
 MobileGoose_FILES = Tweak.xm $(wildcard */*.mm)
-MobileGoose_CFLAGS = -fobjc-arc -I. -include macros.h
+MobileGoose_CFLAGS = -fobjc-arc -I. -include macros.h -ferror-limit=0
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 SUBPROJECTS += Prefs
