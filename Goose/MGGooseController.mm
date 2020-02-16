@@ -66,6 +66,7 @@ static const CGFloat defaultSpeed = 2.6;
 - (void)memeAnimationCompletion {
 	[_gooseView removeFrameHandlerAtIndex:frameHandlerIndex];
 	_gooseView.stopsAtEdge = YES;
+	imageContainer.hideOnTap = YES;
 	imageContainer = nil;
 	[self turnToUserAnimation];
 }

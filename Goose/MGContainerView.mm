@@ -1,5 +1,4 @@
 #import "MGContainerView.h"
-#define min(a,b) ((a<b)?a:b)
 
 @implementation MGContainerView
 
@@ -35,7 +34,7 @@ static UIColor *backgroundColor;
 }
 
 - (void)handleTap:(UITapGestureRecognizer *)sender {
-	if (sender.state == UIGestureRecognizerStateEnded) {
+	if (_hideOnTap && (sender.state == UIGestureRecognizerStateEnded)) {
 		[UIView
 			animateWithDuration:0.5
             animations:^{ self.alpha = 0.0; }

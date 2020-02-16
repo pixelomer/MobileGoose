@@ -15,6 +15,7 @@
 		_failureLabel.textColor = [UIColor colorWithWhite:0.0 alpha:0.5];
 		_failureLabel.numberOfLines = 0;
 		_failureLabel.textAlignment = NSTextAlignmentCenter;
+		_imageView.layer.masksToBounds = YES;
 		[self.contentView addSubview:_imageView];
 		[self.contentView addSubview:_failureLabel];
 	}
@@ -23,6 +24,7 @@
 
 - (void)layoutSubviews {
 	[super layoutSubviews];
+	_imageView.layer.cornerRadius = 0.1 * min(_imageView.frame.size.width, _imageView.frame.size.height);
 	_imageView.frame = CGRectMake(0.0, 0.0, self.contentView.frame.size.width, self.contentView.frame.size.height);
 	CGSize bestLabelSize = [_failureLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)];
 	bestLabelSize.height *= 2;

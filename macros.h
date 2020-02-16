@@ -1,5 +1,6 @@
 #import <UIKit/UIKit.h>
 #define DEG_TO_RAD(degress) ((degress) * M_PI / 180.0)
+#define min(a,b) ((a<b)?a:b)
 #define PrefValue(key) ([NSUserDefaults.standardUserDefaults \
 	objectForKey:key \
 	inDomain:@"com.pixelomer.mobilegoose" \
