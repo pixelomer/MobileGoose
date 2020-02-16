@@ -69,6 +69,8 @@
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Credits</string>
+			<key>footerText</key>
+			<string>MobileGoose was inspired by Desktop Goose, which was made by Samperson. Thanks to him for making an interesting program like that which lead to the creation of MobileGoose.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
