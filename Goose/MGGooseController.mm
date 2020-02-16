@@ -183,7 +183,7 @@ static const CGFloat defaultSpeed = 2.6;
 				dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0),
 				^{ [self loadMeme]; }
 			);
-			[sender walkForDuration:(3.0 + ((NSTimeInterval)arc4random_uniform(15) / 10.0)) speed:-2.0 completionHandler:^(id sender){
+			[sender walkForDuration:(2.25 + ((NSTimeInterval)arc4random_uniform(15) / 10.0)) speed:-2.0 completionHandler:^(id sender){
 				[self memeAnimationCompletion];
 			}];
 		}

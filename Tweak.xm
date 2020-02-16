@@ -63,7 +63,7 @@ CGAffineTransform MGGetTransform(void) {
 	gooseWindow.opaque = NO;
 	gooseWindow.hidden = NO;
 	gooseWindow.backgroundColor = [UIColor clearColor];
-	gooseWindow.windowLevel = CGFLOAT_MAX - 1;
+	gooseWindow.windowLevel = CGFLOAT_MAX / 2.0;
 	[gooseWindow makeKeyAndVisible];
 	containers = [NSPointerArray weakObjectsPointerArray];
 	NSMutableArray *mHonks = [NSMutableArray new];
