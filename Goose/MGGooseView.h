@@ -44,6 +44,7 @@ typedef void(^MGGooseCommonBlock)(MGGooseView *);
 	completionHandler:(MGGooseCommonBlock)completion;
 - (void)setFacingTo:(CGFloat)degress
 	animationCompletion:(MGGooseCommonBlock)completion;
+- (void)stopWalking;
 - (NSUInteger)addFrameHandler:(MGGooseFrameHandler)handler;
 - (void)removeFrameHandlerAtIndex:(NSUInteger)index;
 - (BOOL)isFrameAtEdge:(CGRect)frame;

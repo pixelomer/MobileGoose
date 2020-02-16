@@ -252,6 +252,14 @@ static NSPointerArray *sharedFrameHandlers;
 	_walkMultiplier = multiplier;
 }
 
+- (void)stopWalking {
+	_walkingState = 0;
+	_remainingFramesUntilCompletion = -1;
+	MGGooseCommonBlock completion = _walkCompletion;
+	_walkCompletion = nil;
+	if (completion) completion(self);
+}
+
 - (void)timer:(id)unused {
 	// If shouldRenderFrameBlock() returns NO, don't drawRect
 	if (_shouldRenderFrameBlock && !_shouldRenderFrameBlock(self)) return;
@@ -306,9 +314,7 @@ static NSPointerArray *sharedFrameHandlers;
 
 	// If the goose finished walking, call the completion handler
 	if ((_remainingFramesUntilCompletion == -1) && _walkCompletion) {
-		MGGooseCommonBlock completion = _walkCompletion;
-		_walkCompletion = nil;
-		completion(self);
+		[self stopWalking];
 	}
 
 	// _facingTo has to be in the (0 ... 360) range

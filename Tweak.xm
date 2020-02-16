@@ -27,13 +27,19 @@ static void(^animation2Handler)(MGGooseView *);
 static void(^showMeme)(MGGooseView *);
 static void(^walkHandler)(MGGooseView *);
 static void(^findMeme)(MGGooseView *);
-static void(^gotoMemeFrameHandler)(MGGooseView *, MGGooseFrameState state);
+static void(^gotoMemeFrameHandler)(MGGooseView *, MGGooseFrameState);
 static void(^turnToMemeHandler)(MGGooseView *);
-static void(^pullMemeFrameHandler)(MGGooseView *, MGGooseFrameState state);
+static void(^pullMemeFrameHandler)(MGGooseView *, MGGooseFrameState);
 static void(^finishMemeAnimation)(MGGooseView *);
 static void(^turnToUserAnimation)(MGGooseView *);
+static void(^goCrazyCompletionTurnCompletion)(MGGooseView *);
+static void(^goCrazyAnimation)(MGGooseView *, MGGooseFrameState);
+static void(^goCrazy)(MGGooseView *);
+static void(^goCrazySetupFrameHandler)(MGGooseView *, MGGooseFrameState);
+static void(^getBackToNormalFrameHandler)(MGGooseView *, MGGooseFrameState);
+static void(^goCrazyCompletion)(MGGooseView *);
 static void(^loadMeme)(void);
-static BOOL(^shouldRenderFrameBlock)(MGGooseView *sender);
+static BOOL(^shouldRenderFrameBlock)(MGGooseView *);
 static __kindof MGContainerView *imageContainer;
 static BOOL getMemeFromTheLeft;
 static NSInteger frameHandlerIndex;
@@ -177,6 +183,49 @@ static const CGFloat defaultSpeed = 2.6;
 	findMeme = ^(MGGooseView *sender){
 		[sender setFacingTo:(!!getMemeFromTheLeft * 180.0) animationCompletion:turnToMemeHandler];
 	};
+	getBackToNormalFrameHandler = ^(MGGooseView *sender, MGGooseFrameState state) {
+		if (state == MGGooseDidFinishDrawing) {
+			if (![sender isFrameAtEdge:sender.frame]) {
+				sender.stopsAtEdge = YES;
+				[sender stopWalking];
+				[sender removeFrameHandlerAtIndex:frameHandlerIndex];
+				turnToUserAnimation(sender);
+			}
+		}
+	};
+	goCrazyCompletionTurnCompletion = ^(MGGooseView *sender){
+		[sender walkForDuration:-1 speed:defaultSpeed completionHandler:nil];
+		frameHandlerIndex = [sender addFrameHandler:getBackToNormalFrameHandler];
+	};
+	goCrazyCompletion = ^(MGGooseView *sender){
+		[sender removeFrameHandlerAtIndex:frameHandlerIndex];
+		if (![sender isFrameAtEdge:sender.frame]) {
+			sender.stopsAtEdge = YES;
+			turnToUserAnimation(sender);
+		}
+		else {
+			[sender setFacingTo:45.0 animationCompletion:goCrazyCompletionTurnCompletion];
+		}
+	};
+	goCrazyAnimation = ^(MGGooseView *sender, MGGooseFrameState state){
+		if (state == MGGooseDidFinishDrawing) {
+			sender.facingTo += ((CGFloat)arc4random_uniform(150) / 10.0) - 7.5;
+		}
+	};
+	goCrazySetupFrameHandler = ^(MGGooseView *sender, MGGooseFrameState state){
+		if (state == MGGooseDidFinishDrawing) {
+			if (sender.positionChange.x <= -10) {
+				[sender removeFrameHandlerAtIndex:frameHandlerIndex];
+				[sender walkForDuration:((CGFloat)arc4random_uniform(30) / 10.0)+6.0 speed:defaultSpeed*3.0 completionHandler:goCrazyCompletion];
+				frameHandlerIndex = [sender addFrameHandler:goCrazyAnimation];
+			}
+		}
+	};
+	goCrazy = ^(MGGooseView *sender){
+		sender.stopsAtEdge = NO;
+		[sender walkForDuration:-1.0 speed:defaultSpeed completionHandler:nil];
+		frameHandlerIndex = [sender addFrameHandler:goCrazySetupFrameHandler];
+	};
 	animation2Handler = ^(MGGooseView *sender){
 		dispatch_after(
 			dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * ((double)arc4random_uniform(50) / 10.0)),
@@ -190,6 +239,10 @@ static const CGFloat defaultSpeed = 2.6;
 					(randomValue <= 44) && (randomValue >= 40))
 				{
 					cls = [MGImageContainerView class];
+				}
+				else if (randomValue <= 5) {
+					[sender setFacingTo:0.0 animationCompletion:goCrazy];
+					return;
 				}
 				else if ([(((NSNumber *)PrefValue(@"BringNotes")) ?: @NO) boolValue] &&
 					(randomValue <= 49) && (randomValue >= 45))
