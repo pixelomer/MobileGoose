@@ -33,4 +33,12 @@
 	}
 }
 
+- (void)URLButtonPerformedAction:(PSSpecifier*)specifier {
+	NSString *URLString = [specifier propertyForKey:@"url"];
+	NSURL *URL;
+	if (URLString && (URL = [NSURL URLWithString:URLString])) {
+		[UIApplication.sharedApplication openURL:URL];
+	}
+}
+
 @end

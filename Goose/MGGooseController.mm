@@ -21,9 +21,10 @@ static const CGFloat defaultSpeed = 2.6;
 	];
 	NSArray *files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:path error:nil];
 	if ([(((NSNumber *)PrefValue(@"DisableDefaultGifts")) ?: @NO) boolValue]) {
-		NSMutableArray *mFiles = files.mutableCopy;
-		[mFiles removeObject:@"DefaultMeme.png"];
-		[mFiles removeObject:@"DefaultNote.txt"];
+		NSMutableArray<NSString *> *mFiles = files.mutableCopy;
+		for (NSInteger i=mFiles.count-1; i>=0; i--) {
+			if ([mFiles[i] hasPrefix:@"Default"]) [mFiles removeObjectAtIndex:i];
+		}
 		files = mFiles.copy;
 	}
 	NSString *randomFile = files.count ? [path stringByAppendingPathComponent:files[arc4random_uniform(files.count)]] : nil;
@@ -120,7 +121,6 @@ static const CGFloat defaultSpeed = 2.6;
 }
 
 - (void)continueWithRandomAnimation {
-	NSLog(@"%lu", (unsigned long)containers.count);
 	uint8_t randomValue = arc4random_uniform(50);
 	[containers MGCompact];
 	if ((containers.count >= 5) && (randomValue >= 40)) randomValue += 10;

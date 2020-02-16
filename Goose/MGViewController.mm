@@ -1,5 +1,6 @@
 #import "MGViewController.h"
 #import <substrate.h>
+#import "MGContainerView.h"
 
 @implementation MGViewController
 

@@ -1,9 +1,9 @@
 Package: com.pixelomer.mobilegoose
 Name: MobileGoose
 Depends: mobilesubstrate
-Version: 0.0.1
+Version: 1.0
 Architecture: iphoneos-arm
-Description: An awesome MobileSubstrate tweak!
+Description: An annoying goose for your iDevice
 Maintainer: PixelOmer
 Author: PixelOmer
 Section: Tweaks
