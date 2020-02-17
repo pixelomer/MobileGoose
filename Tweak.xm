@@ -68,7 +68,7 @@ CGAffineTransform MGGetTransform(void) {
 	[gooseWindow makeKeyAndVisible];
 	containers = [NSPointerArray weakObjectsPointerArray];
 	NSMutableArray *mHonks = [NSMutableArray new];
-	const NSInteger gooseCount = 5;
+	const NSInteger gooseCount = 1;
 	for (NSInteger i=0; i<gooseCount; i++) {
 		CGRect frame = CGRectMake(0, 0, 0, 0);
 		MGGooseView *honk = [[MGGooseView alloc] initWithFrame:frame];
