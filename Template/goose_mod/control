@@ -1,0 +1,10 @@
+Package: @@PACKAGENAME@@
+Name: @@FULLPROJECTNAME@@
+Description: An awesome MobileGoose mod!
+Version: 0.0.1
+Priority: optional
+Section: Tweaks
+Architecture: iphoneos-arm
+Depends: com.pixelomer.mobilegoose (>=1.1)
+Maintainer: @@USER@@
+Author: @@USER@@

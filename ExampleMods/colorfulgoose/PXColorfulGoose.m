@@ -1,11 +1,11 @@
-#import "PXColorfulGooseMod.h"
+#import "PXColorfulGoose.h"
 
-@implementation PXColorfulGooseMod
+@implementation PXColorfulGoose
 
 static NSArray<UIColor *> *colors;
 
 + (void)initialize {
-	if ([PXColorfulGooseMod class] == self) {
+	if ([PXColorfulGoose class] == self) {
 		NSMutableArray *mColors = [NSMutableArray new];
 		for (uint16_t i=0; i<=255; i++) {
 			[mColors addObject:[UIColor

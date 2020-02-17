@@ -1,7 +1,7 @@
-Package: com.pixelomer.colorfulgoose
-Name: ColorfulGoose
-Description: Add color to your goose
-Version: 1.1
+Package: com.pixelomer.joethegoose
+Name: JoeTheGoose
+Description: An awesome MobileGoose mod!
+Version: 0.0.1
 Priority: optional
 Section: Tweaks
 Architecture: iphoneos-arm

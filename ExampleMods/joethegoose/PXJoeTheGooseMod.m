@@ -1,8 +1,8 @@
-#import "PXNameTagMod.h"
+#include "PXJoeTheGooseMod.h"
 
-@implementation PXNameTagMod
+@implementation PXJoeTheGooseMod
 
-- (instancetype)initWithGoose:(MGGooseView *)goose {
+- (instancetype)initWithGoose:(MGGooseView *)goose bundle:(NSBundle *)bundle {
 	if ((self = [super init])) {
 		UILabel *nameLabel = [[UILabel alloc] initWithFrame:CGRectMake(
 			14.0,

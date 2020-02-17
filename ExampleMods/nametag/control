@@ -1,9 +1,0 @@
-Package: com.pixelomer.nametagmod
-Name: Goose Name Tag
-Version: 1.0
-Depends: com.pixelomer.mobilegoose (>=1.1)
-Architecture: iphoneos-arm
-Description: Name tag for goose
-Maintainer: PixelOmer
-Author: PixelOmer
-Section: Tweaks

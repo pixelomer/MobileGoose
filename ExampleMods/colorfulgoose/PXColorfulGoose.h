@@ -1,7 +1,7 @@
 #import <UIKit/UIKit.h>
-#import "../MobileGoose.h"
+#import <MobileGoose.h>
 
-@interface PXColorfulGooseMod : NSObject<MGMod> {
+@interface PXColorfulGoose : NSObject<MGMod> {
 	CGFloat hue;
 }
 - (void)handleFrameInState:(MGGooseFrameState)state;

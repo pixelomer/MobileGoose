@@ -5,20 +5,21 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>ColorfulGoose.dylib</string>
+	<string>JoeTheGoose</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.pixelomer.colorfulgoose</string>
+	<string>com.pixelomer.joethegoose</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1</string>
+	<string>1.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2</string>
+	<string>1.0.0</string>
 	<key>NSPrincipalClass</key>
-	<string>PXColorfulGooseMod</string>
+	<string>PXJoeTheGooseMod</string>
 </dict>
 </plist>
+

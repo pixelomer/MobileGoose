@@ -1,0 +1,6 @@
+name "iphone/goose_mod"
+prompt CLASSNAME "Principal class name unique to this project" "XXModName"
+constrain "control" to package
+
+constrain file "control" to package
+constrain "theos" to link_theos
