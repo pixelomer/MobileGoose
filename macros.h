@@ -14,4 +14,16 @@
 - (UIViewController *)_viewControllerForAncestor;
 @end
 
+#import <Goose/MGGooseView.h>
+
+@class SpringBoard;
+
+@protocol MGMod
+@optional
+- (instancetype)initWithGoose:(MGGooseView *)goose;
+- (instancetype)initWithGoose:(MGGooseView *)goose bundle:(NSBundle *)bundle;
+- (void)handleFrameInState:(MGGooseFrameState)state;
+- (void)springboardDidFinishLaunching:(SpringBoard *)application;
+@end
+
 CGAffineTransform MGGetTransform(void);

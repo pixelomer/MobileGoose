@@ -245,7 +245,7 @@ static NSMutableArray *sharedFrameHandlers;
 	_frameHandlers[index] = [NSNull null];
 }
 
-- (NSUInteger)addFrameHandlerWithTarget:(id)target action:(SEL)action {
++ (NSUInteger)_addFrameHandlerWithTarget:(id)target action:(SEL)action array:(NSMutableArray *)array {
 	NSInvocation *invocation = [NSInvocation
 		invocationWithMethodSignature:[NSMethodSignature signatureWithObjCTypes:[NSString
 			stringWithFormat:@"%s%s%s%s%s",
@@ -258,14 +258,22 @@ static NSMutableArray *sharedFrameHandlers;
 	];
 	invocation.target = target;
 	invocation.selector = action;
-	for (NSUInteger i=0; i<_frameHandlers.count; i++) {
-		if ([[_frameHandlers objectAtIndex:i] isKindOfClass:[NSNull class]]) {
-			_frameHandlers[i] = invocation;
+	for (NSUInteger i=0; i<array.count; i++) {
+		if ([[array objectAtIndex:i] isKindOfClass:[NSNull class]]) {
+			array[i] = invocation;
 			return i;
 		}
 	}
-	[_frameHandlers addObject:invocation];
-	return _frameHandlers.count - 1;
+	[array addObject:invocation];
+	return array.count - 1;
+}
+
++ (NSUInteger)addSharedFrameHandlerWithTarget:(id)target action:(SEL)action {
+	return [self _addFrameHandlerWithTarget:target action:action array:sharedFrameHandlers];
+}
+
+- (NSUInteger)addFrameHandlerWithTarget:(id)target action:(SEL)action {
+	return [self.class _addFrameHandlerWithTarget:target action:action array:_frameHandlers];
 }
 
 - (void)setFacingTo:(CGFloat)degrees animationCompletion:(MGGooseCommonBlock)completion {

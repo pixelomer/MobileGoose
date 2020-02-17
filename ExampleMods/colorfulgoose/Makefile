@@ -5,8 +5,8 @@ include $(THEOS)/makefiles/common.mk
 
 LIBRARY_NAME = ColorfulGoose
 
-ColorfulGoose_FILES = ColorfulGoose.m
+ColorfulGoose_FILES = PXColorfulGooseMod.m
 ColorfulGoose_CFLAGS = -fobjc-arc
-ColorfulGoose_INSTALL_PATH = /Library/Application Support/MobileGoose/Mods
+ColorfulGoose_INSTALL_PATH = /Library/Application Support/MobileGoose/Mods/ColorfulGoose.bundle
 
 include $(THEOS_MAKE_PATH)/library.mk

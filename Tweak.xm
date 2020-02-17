@@ -15,6 +15,7 @@ static UIWindow *gooseWindow;
 static NSArray *honks;
 static NSPointerArray *containers;
 static MGViewController *viewController;
+static NSArray<NSBundle *> *modBundles;
 
 CGAffineTransform MGGetTransform(void) {
 	return transform;
@@ -67,7 +68,7 @@ CGAffineTransform MGGetTransform(void) {
 	[gooseWindow makeKeyAndVisible];
 	containers = [NSPointerArray weakObjectsPointerArray];
 	NSMutableArray *mHonks = [NSMutableArray new];
-	const NSInteger gooseCount = 1;
+	const NSInteger gooseCount = 5;
 	for (NSInteger i=0; i<gooseCount; i++) {
 		CGRect frame = CGRectMake(0, 0, 0, 0);
 		MGGooseView *honk = [[MGGooseView alloc] initWithFrame:frame];
@@ -79,22 +80,62 @@ CGAffineTransform MGGetTransform(void) {
 		);
 		honk.frame = frame;
 		honk.shouldRenderFrameBlock = ^BOOL(MGGooseView *_gooseView){
-			return !(
+			BOOL value = !(
 				[(SpringBoard *)UIApplication.sharedApplication isLocked] ||
 				![(PrefValue(@"Enabled") ?: @YES) boolValue]
 			);
+			gooseWindow.userInteractionEnabled = value;
+			return value;
 		};
 		[gooseWindow.rootViewController.view addSubview:honk];
 		honk.layer.zPosition = 100;
 		[mHonks addObject:honk];
 		honk.facingTo = 0.0;
 		[controller startLooping];
+		
+		// Initialize mods
+		NSArray *mods;
+		NSMutableArray *mMods = [NSMutableArray new];
+		for (NSBundle *bundle in modBundles) {
+			__kindof NSObject<MGMod> *mod = [bundle.principalClass alloc];
+			if ([mod respondsToSelector:@selector(initWithGoose:bundle:)]) {
+				mod = [mod initWithGoose:honk bundle:bundle];
+			}
+			else if ([mod respondsToSelector:@selector(initWithGoose:)]) {
+				mod = [mod initWithGoose:honk];
+			}
+			else {
+				mod = [mod init];
+			}
+			if (mod) [mMods addObject:mod];
+		}
+		mods = mMods.copy;
+		mMods = nil;
+		objc_setAssociatedObject(honk, @selector(mods), mods, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+		// Make the goose notify its mods
+		[honk addFrameHandler:^(MGGooseView *sender, MGGooseFrameState state){
+			NSArray *mods = objc_getAssociatedObject(sender, @selector(mods));
+			for (__kindof NSObject<MGMod> *mod in mods) {
+				if ([mod respondsToSelector:@selector(handleFrameInState:)]) {
+					[mod handleFrameInState:state];
+				}
+			}
+		}];
 
 		// Causes a retain cycle, but MGGooseViews are never deallocated so it's fine
 		objc_setAssociatedObject(honk, @selector(controller), controller, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 	}
 	honks = mHonks.copy;
 	mHonks = nil;
+	for (MGGooseView *honk in honks) {
+		NSArray *mods = objc_getAssociatedObject(honk, @selector(mods));
+		for (__kindof NSObject<MGMod> *mod in mods) {
+			if ([mod respondsToSelector:@selector(springboardDidFinishLaunching::)]) {
+				[mod springboardDidFinishLaunching:self];
+			}
+		}
+	}
 }
 
 %end
@@ -125,8 +166,13 @@ static void MGResetPreferences(
 		contentsOfDirectoryAtPath:dir
 		error:nil
 	];
+	NSMutableArray *mModBundles = [NSMutableArray new];
 	for (NSString *filename in mods) {
 		NSString *fullFilePath = [dir stringByAppendingPathComponent:filename];
-		dlopen(fullFilePath.UTF8String, RTLD_LAZY);
+		NSBundle *bundle = [NSBundle bundleWithPath:fullFilePath];
+		if ([bundle load]) {
+			[mModBundles addObject:bundle];
+		}
 	}
+	modBundles = mModBundles.copy;
 }

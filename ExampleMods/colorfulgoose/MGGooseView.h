@@ -1,1 +1,0 @@
-../../Goose/MGGooseView.h
