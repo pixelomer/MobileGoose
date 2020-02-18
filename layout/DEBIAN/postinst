@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+mv() {
+	command mv "/Library/Application Support/MobileGoose/$1/"* "/Library/MobileGoose/$1/" 2> /dev/null > /dev/null || true
+}
+
+case "$1" in
+
+	triggered)
+		#echo "Refreshing active mods..."
+		;;
+
+	configure)
+		mv Memes
+		mv Notes
+
+		rm -rf "/Library/Application Support/MobileGoose/Memes" "/Library/Application Support/MobileGoose/Notes" || true
+		rmdir "/Library/Application Support/MobileGoose/Mods" 2> /dev/null > /dev/null || true
+		rmdir "/Library/Application Support/MobileGoose" 2> /dev/null > /dev/null || true
+		;;
+
+esac

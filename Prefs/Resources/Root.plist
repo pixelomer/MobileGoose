@@ -26,7 +26,7 @@
 			<key>label</key>
 			<string>Gifts</string>
 			<key>footerText</key>
-			<string>You can put images and notes inside "/Library/Application Support/MobileGoose" for the goose to bring.</string>
+			<string>You can put images and notes inside "/Library/MobileGoose" for the goose to bring.</string>
 		</dict>
 		<dict>
 			<key>cell</key>

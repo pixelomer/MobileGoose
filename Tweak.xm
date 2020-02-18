@@ -161,7 +161,7 @@ static void MGResetPreferences(
 		NULL,
 		0
 	);
-	NSString *dir = @"/Library/Application Support/MobileGoose/Mods";
+	NSString *dir = @"/Library/MobileGoose/Mods";
 	NSArray *mods = [NSFileManager.defaultManager
 		contentsOfDirectoryAtPath:dir
 		error:nil
