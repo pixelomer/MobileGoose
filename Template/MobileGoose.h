@@ -19,11 +19,17 @@ typedef void(^MGGooseFrameHandler)(MGGooseView *, MGGooseFrameState);
 typedef void(^MGGooseCommonBlock)(MGGooseView *);
 
 @protocol MGMod
+
+@required
+@property (nonatomic, assign) BOOL enabled;
+
 @optional
+- (void)preferenceWithKey:(NSString *)key didChangeToValue:(id)value;
 - (instancetype)initWithGoose:(MGGooseView *)goose;
 - (instancetype)initWithGoose:(MGGooseView *)goose bundle:(NSBundle *)bundle;
 - (void)handleFrameInState:(MGGooseFrameState)state;
 - (void)springboardDidFinishLaunching:(SpringBoard *)application;
+
 @end
 
 // ALL of the methods in this class MUST be called on the main thread.

@@ -15,7 +15,8 @@ static UIWindow *gooseWindow;
 static NSArray *honks;
 static NSPointerArray *containers;
 static MGViewController *viewController;
-static NSArray<NSBundle *> *modBundles;
+static NSDictionary<NSString *, NSBundle *> *modBundles;
+static NSDictionary<NSString *, NSArray<NSObject<MGMod> *> *> *allModObjects;
 
 CGAffineTransform MGGetTransform(void) {
 	return transform;
@@ -69,6 +70,7 @@ CGAffineTransform MGGetTransform(void) {
 	containers = [NSPointerArray weakObjectsPointerArray];
 	NSMutableArray *mHonks = [NSMutableArray new];
 	const NSInteger gooseCount = 1;
+	NSMutableDictionary *modObjects = [NSMutableDictionary new];
 	for (NSInteger i=0; i<gooseCount; i++) {
 		CGRect frame = CGRectMake(0, 0, 0, 0);
 		MGGooseView *honk = [[MGGooseView alloc] initWithFrame:frame];
@@ -96,7 +98,7 @@ CGAffineTransform MGGetTransform(void) {
 		// Initialize mods
 		NSArray *mods;
 		NSMutableArray *mMods = [NSMutableArray new];
-		for (NSBundle *bundle in modBundles) {
+		for (NSBundle *bundle in modBundles.allValues) {
 			__kindof NSObject<MGMod> *mod = [bundle.principalClass alloc];
 			if ([mod respondsToSelector:@selector(initWithGoose:bundle:)]) {
 				mod = [mod initWithGoose:honk bundle:bundle];
@@ -107,7 +109,20 @@ CGAffineTransform MGGetTransform(void) {
 			else {
 				mod = [mod init];
 			}
-			if (mod) [mMods addObject:mod];
+			if (mod) {
+				[mMods addObject:mod];
+				if ([mod respondsToSelector:@selector(enabled)]) {
+					mod.enabled = [(NSNumber *)([NSUserDefaults.standardUserDefaults
+						objectForKey:@"Enabled"
+						inDomain:bundle.bundleIdentifier
+					] ?: @YES) boolValue];
+				}
+			}
+			if (!modObjects[bundle.bundlePath]) {
+				modObjects[bundle.bundlePath] = [NSMutableArray new];
+			}
+			NSMutableArray *array = modObjects[bundle.bundlePath];
+			[array addObject:mod];
 		}
 		mods = mMods.copy;
 		mMods = nil;
@@ -117,6 +132,7 @@ CGAffineTransform MGGetTransform(void) {
 		[honk addFrameHandler:^(MGGooseView *sender, MGGooseFrameState state){
 			NSArray *mods = objc_getAssociatedObject(sender, @selector(mods));
 			for (__kindof NSObject<MGMod> *mod in mods) {
+				if ([mod respondsToSelector:@selector(enabled)] && !mod.enabled) continue;
 				if ([mod respondsToSelector:@selector(handleFrameInState:)]) {
 					[mod handleFrameInState:state];
 				}
@@ -126,6 +142,34 @@ CGAffineTransform MGGetTransform(void) {
 		// Causes a retain cycle, but MGGooseViews are never deallocated so it's fine
 		objc_setAssociatedObject(honk, @selector(controller), controller, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 	}
+
+	// Add preference observers
+	for (NSString *key in modObjects.allKeys.copy) {
+		modObjects[key] = [(NSObject *)modObjects[key] copy];
+	}
+	allModObjects = modObjects.copy;
+	[[%c(NSDistributedNotificationCenter) defaultCenter]
+		addObserverForName:@"com.pixelomer.mobilegoose/ModPreferencesChanged"
+		object:nil
+		queue:nil
+		usingBlock:^(NSNotification *notification){
+			NSArray *allRelatedObjects = allModObjects[notification.object];
+			NSString *key = notification.userInfo[@"key"];
+			id newValue = notification.userInfo[@"newValue"];
+			for (NSObject<MGMod> *mod in allRelatedObjects) {
+				if ([key isEqualToString:@"Enabled"]) {
+					if ([mod respondsToSelector:@selector(enabled)]) {
+						mod.enabled = [(NSNumber *)newValue boolValue];
+					}
+				}
+				else if ([mod respondsToSelector:@selector(preferenceWithKey:didChangeToValue:)]) {
+					[mod preferenceWithKey:key didChangeToValue:newValue];
+				}
+			}
+		}
+	];
+
+	// Finalization
 	honks = mHonks.copy;
 	mHonks = nil;
 	for (MGGooseView *honk in honks) {
@@ -166,12 +210,12 @@ static void MGResetPreferences(
 		contentsOfDirectoryAtPath:dir
 		error:nil
 	];
-	NSMutableArray *mModBundles = [NSMutableArray new];
+	NSMutableDictionary *mModBundles = [NSMutableDictionary new];
 	for (NSString *filename in mods) {
 		NSString *fullFilePath = [dir stringByAppendingPathComponent:filename];
 		NSBundle *bundle = [NSBundle bundleWithPath:fullFilePath];
 		if ([bundle load]) {
-			[mModBundles addObject:bundle];
+			mModBundles[bundle.bundlePath] = bundle;
 		}
 	}
 	modBundles = mModBundles.copy;

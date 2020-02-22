@@ -2,7 +2,7 @@ include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = MobileGoose
 
-MobileGoose_FILES = PXMGPRootListController.m
+MobileGoose_FILES = $(wildcard *.m)
 MobileGoose_INSTALL_PATH = /Library/PreferenceBundles
 MobileGoose_FRAMEWORKS = UIKit
 MobileGoose_PRIVATE_FRAMEWORKS = Preferences

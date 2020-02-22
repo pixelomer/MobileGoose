@@ -6,6 +6,12 @@
 	<array>
 		<dict>
 			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>MobileGooses</string>
+		</dict>
+		<dict>
+			<key>cell</key>
 			<string>PSSwitchCell</string>
 			<key>default</key>
 			<true/>
@@ -19,6 +25,16 @@
 			<string>setPreferenceValue:forNotifyingSwitch:</string>
 			<key>anyNotification</key>
 			<string>com.pixelomer.mobilegoose/PreferenceChange</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>detail</key>
+			<string>PXMGPModListController</string>
+			<key>isController</key>
+			<true/>
+			<key>label</key>
+			<string>Mods</string>
 		</dict>
 		<dict>
 			<key>cell</key>

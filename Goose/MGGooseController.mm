@@ -16,7 +16,7 @@ static const CGFloat defaultSpeed = 2.6;
 - (void)loadMeme {
 	BOOL isImage = [imageContainer isKindOfClass:[MGImageContainerView class]];
 	NSString *path = [NSString
-		stringWithFormat:@"/Library/Application Support/MobileGoose/%@",
+		stringWithFormat:@"/Library/MobileGoose/%@",
 		isImage ? @"Memes" : @"Notes"
 	];
 	NSArray *files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:path error:nil];

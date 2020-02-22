@@ -20,6 +20,8 @@
 	<string>1.0.0</string>
 	<key>NSPrincipalClass</key>
 	<string>PXJoeTheGooseMod</string>
+	<key>CFBundleDisplayName</key>
+	<string>Goose Name Tag</string>
 </dict>
 </plist>
 

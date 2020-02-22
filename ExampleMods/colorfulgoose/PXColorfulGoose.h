@@ -5,4 +5,5 @@
 	CGFloat hue;
 }
 - (void)handleFrameInState:(MGGooseFrameState)state;
+@property (nonatomic, assign) BOOL enabled;
 @end

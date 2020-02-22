@@ -10,6 +10,9 @@
 - (id)objectForKey:(NSString *)key inDomain:(NSString *)domain;
 @end
 
+@interface NSDistributedNotificationCenter : NSNotificationCenter
+@end
+
 @interface UIView(Private)
 - (UIViewController *)_viewControllerForAncestor;
 @end
@@ -19,11 +22,17 @@
 @class SpringBoard;
 
 @protocol MGMod
+
+@required
+@property (nonatomic, assign) BOOL enabled;
+
 @optional
+- (void)preferenceWithKey:(NSString *)key didChangeToValue:(id)value;
 - (instancetype)initWithGoose:(MGGooseView *)goose;
 - (instancetype)initWithGoose:(MGGooseView *)goose bundle:(NSBundle *)bundle;
 - (void)handleFrameInState:(MGGooseFrameState)state;
 - (void)springboardDidFinishLaunching:(SpringBoard *)application;
+
 @end
 
 CGAffineTransform MGGetTransform(void);
