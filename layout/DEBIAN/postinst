@@ -1,13 +1,27 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 mv() {
 	command mv "/Library/Application Support/MobileGoose/$1/"* "/Library/MobileGoose/$1/" 2> /dev/null > /dev/null || true
 }
 
+function finish() {
+	f="${1}"
+
+	# No control fd: bail out
+	[[ -z "${f}" || -z "${CYDIA}" ]] && return
+	cydia=(${CYDIA})
+
+	# Cydia control fd version != 1: bail out
+	[[ ${cydia[1]} -eq 1 ]] || return
+
+	echo "finish:${f}" >&${cydia[0]}
+}
+
 case "$1" in
 
 	triggered)
-		#echo "Refreshing active mods..."
+		echo "MobileGoose mods were changed, requesting a respring..."
+		finish reload
 		;;
 
 	configure)
