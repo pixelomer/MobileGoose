@@ -13,8 +13,9 @@
 		nameLabel.numberOfLines = 1;
 		nameLabel.adjustsFontSizeToFitWidth = YES;
 		nameLabel.textAlignment = NSTextAlignmentCenter;
+		nameLabel.textColor = [UIColor blackColor];
 		nameLabel.minimumScaleFactor = 0.1;
-		nameLabel.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.75];
+		nameLabel.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.8];
 		[goose addSubview:nameLabel];
 		[self preferenceWithKey:@"Name" didChangeToValue:nil];
 	}
