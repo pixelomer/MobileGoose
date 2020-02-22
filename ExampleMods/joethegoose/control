@@ -1,10 +1,10 @@
 Package: com.pixelomer.joethegoose
-Name: JoeTheGoose
-Description: An awesome MobileGoose mod!
-Version: 0.0.1
+Name: Goose Name Tag
+Description: A name tag for your goose
+Version: 1.0
 Priority: optional
 Section: Tweaks
 Architecture: iphoneos-arm
-Depends: com.pixelomer.mobilegoose (>=1.1)
+Depends: com.pixelomer.mobilegoose (>=1.2)
 Maintainer: PixelOmer
 Author: PixelOmer
