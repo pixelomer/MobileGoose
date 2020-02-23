@@ -82,12 +82,13 @@ CGAffineTransform MGGetTransform(void) {
 		);
 		honk.frame = frame;
 		honk.shouldRenderFrameBlock = ^BOOL(MGGooseView *_gooseView){
-			BOOL value = !(
+			BOOL disabled = (
 				[(SpringBoard *)UIApplication.sharedApplication isLocked] ||
 				![(PrefValue(@"Enabled") ?: @YES) boolValue]
 			);
-			gooseWindow.userInteractionEnabled = value;
-			return value;
+			gooseWindow.userInteractionEnabled = !disabled;
+			gooseWindow.hidden = disabled;
+			return !disabled;
 		};
 		[gooseWindow.rootViewController.view addSubview:honk];
 		honk.layer.zPosition = 100;
@@ -191,9 +192,7 @@ static void MGResetPreferences(
 	const void *object,
 	CFDictionaryRef userInfo
 ) {
-	void(^block)() = ^{gooseWindow.hidden = ![(PrefValue(@"Enabled") ?: @YES) boolValue];};
-	if ([NSThread isMainThread]) block();
-	else dispatch_async(dispatch_get_main_queue(), block);
+	[NSUserDefaults.standardUserDefaults synchronize];
 }
 
 %ctor {

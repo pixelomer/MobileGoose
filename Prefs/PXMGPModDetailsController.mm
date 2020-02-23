@@ -1,5 +1,6 @@
 #include "PXMGPModDetailsController.h"
 #import <Preferences/PSSpecifier.h>
+#import <substrate.h>
 
 @interface PSSpecifier(Private)
 - (instancetype)initWithName:(NSString *)identifier target:(id)target set:(SEL)set get:(SEL)get detail:(Class)detail cell:(PSCellType)cellType edit:(Class)edit;
@@ -52,18 +53,10 @@
 			bundle:_modBundle
 		];
 		for (PSSpecifier *specifier in specifiersFromFile) {
-			NSMutableDictionary *properties = specifier.properties;
-			PSSpecifier *correctedSpecifier = [specifier
-				initWithName:specifier.name
-				target:self
-				set:setter
-				get:getter
-				detail:nil
-				cell:specifier.cellType
-				edit:nil
-			];
-			specifier.properties = properties;
-			[mutableSpecifiers addObject:correctedSpecifier];
+			specifier.target = self;
+			MSHookIvar<SEL>(specifier, "getter") = getter;
+			MSHookIvar<SEL>(specifier, "setter") = setter;
+			[mutableSpecifiers addObject:specifier];
 		}
 		_specifiers = mutableSpecifiers.copy;
 	}
