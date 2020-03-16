@@ -1,7 +1,7 @@
 Package: com.pixelomer.mobilegoose
 Name: MobileGoose
 Depends: mobilesubstrate, preferenceloader
-Version: 1.2.1
+Version: 1.3
 Architecture: iphoneos-arm
 Description: An annoying goose for your iDevice
 Maintainer: PixelOmer

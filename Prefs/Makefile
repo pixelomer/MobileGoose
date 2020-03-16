@@ -5,6 +5,7 @@ BUNDLE_NAME = MobileGoose
 MobileGoose_FILES = $(wildcard *.mm)
 MobileGoose_INSTALL_PATH = /Library/PreferenceBundles
 MobileGoose_FRAMEWORKS = UIKit
+MobileGoose_LIBRARIES = substrate
 MobileGoose_PRIVATE_FRAMEWORKS = Preferences
 MobileGoose_CFLAGS = -fobjc-arc
 

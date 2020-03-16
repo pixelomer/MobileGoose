@@ -69,7 +69,7 @@ CGAffineTransform MGGetTransform(void) {
 	[gooseWindow makeKeyAndVisible];
 	containers = [NSPointerArray weakObjectsPointerArray];
 	NSMutableArray *mHonks = [NSMutableArray new];
-	const NSInteger gooseCount = 1;
+	const NSInteger gooseCount = @(floor(((NSNumber *)(PrefValue(@"GooseCount") ?: @1)).doubleValue)).integerValue;
 	NSMutableDictionary *modObjects = [NSMutableDictionary new];
 	for (NSInteger i=0; i<gooseCount; i++) {
 		CGRect frame = CGRectMake(0, 0, 0, 0);
@@ -195,12 +195,30 @@ static void MGResetPreferences(
 	[NSUserDefaults.standardUserDefaults synchronize];
 }
 
+static void MGHandleExitNotification(
+	CFNotificationCenterRef center,
+	void *observer,
+	CFNotificationName name,
+	const void *object,
+	CFDictionaryRef userInfo
+) {
+	exit(0);
+}
+
 %ctor {
 	CFNotificationCenterAddObserver(
 		CFNotificationCenterGetDarwinNotifyCenter(),
 		NULL,
 		&MGResetPreferences,
 		CFSTR("com.pixelomer.mobilegoose/PreferenceChange"),
+		NULL,
+		0
+	);
+	CFNotificationCenterAddObserver(
+		CFNotificationCenterGetDarwinNotifyCenter(),
+		NULL,
+		&MGHandleExitNotification,
+		CFSTR("com.pixelomer.mobilegoose/Exit"),
 		NULL,
 		0
 	);

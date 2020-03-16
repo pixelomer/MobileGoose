@@ -10,6 +10,7 @@
 	__kindof MGContainerView *imageContainer;
 }
 @property (nonatomic, strong, readonly) MGGooseView *gooseView;
+@property (nonatomic, assign) BOOL useSharedContainerArray;
 - (instancetype)initWithGoose:(MGGooseView *)goose;
 - (void)startLooping;
 @end

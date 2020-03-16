@@ -12,6 +12,13 @@
 @implementation MGGooseController
 
 static const CGFloat defaultSpeed = 2.6;
+static NSPointerArray *sharedContainers;
+
++ (void)load {
+	if (self == [MGGooseController class]) {
+		sharedContainers = [NSPointerArray weakObjectsPointerArray];
+	}
+}
 
 - (void)loadMeme {
 	BOOL isImage = [imageContainer isKindOfClass:[MGImageContainerView class]];
@@ -124,7 +131,7 @@ static const CGFloat defaultSpeed = 2.6;
 - (void)continueWithRandomAnimation {
 	uint8_t randomValue = arc4random_uniform(50);
 	[containers MGCompact];
-	if ((containers.count >= 5) && (randomValue >= 40)) randomValue += 10;
+	if ((containers.count >= @(floor(((NSNumber *)(PrefValue(@"MaxGiftCount") ?: @5)).doubleValue)).integerValue) && (randomValue >= 40)) randomValue += 10;
 	Class cls = nil;
 	if ([(((NSNumber *)PrefValue(@"BringImages")) ?: @YES) boolValue] &&
 		(randomValue <= 44) && (randomValue >= 40))
@@ -233,10 +240,18 @@ static const CGFloat defaultSpeed = 2.6;
 	];
 }
 
+- (void)setUseSharedContainerArray:(BOOL)newValue {
+	if (!!newValue != !!_useSharedContainerArray) {
+		if (newValue) containers = sharedContainers;
+		else containers = [NSPointerArray weakObjectsPointerArray];
+	}
+	_useSharedContainerArray = newValue;
+}
+
 - (instancetype)initWithGoose:(MGGooseView *)goose {
 	if ((self = [super init])) {
 		_gooseView = goose;
-		containers = [NSPointerArray weakObjectsPointerArray];
+		self.useSharedContainerArray = YES;
 	}
 	return self;
 }
