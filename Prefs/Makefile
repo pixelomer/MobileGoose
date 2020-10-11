@@ -2,7 +2,7 @@ include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = MobileGoose
 
-MobileGoose_FILES = $(wildcard *.mm)
+MobileGoose_FILES = $(wildcard *.m) $(wildcard *.mm)
 MobileGoose_INSTALL_PATH = /Library/PreferenceBundles
 MobileGoose_FRAMEWORKS = UIKit
 MobileGoose_LIBRARIES = substrate

@@ -1,6 +1,7 @@
 #import "PXMGPRootListController.h"
 #import <Preferences/PSSpecifier.h>
 #import <substrate.h>
+#import "Utilities.h"
 
 @interface UIView(Private)
 - (UIViewController *)_viewControllerForAncestor;
@@ -50,7 +51,7 @@ static void MobileGoose$UILabel$setText$hook(UILabel *self, SEL _cmd, NSString *
 	NSNumber *requiresRespring = [specifier propertyForKey:@"requiresRespring"];
 	if (requiresRespring.boolValue) {
 		for (PSSpecifier *button in _specifiers) {
-			SEL action = MSHookIvar<SEL>(button, "action");
+			SEL action = *(PXMGPGetSelectorIvar(button, "action"));
 			if (action == @selector(didRequestRespring:)) {
 				[button setProperty:@YES forKey:@"enabled"];
 				[self reloadSpecifier:button];
