@@ -69,14 +69,29 @@ static void MobileGoose$UILabel$setText$hook(UILabel *self, SEL _cmd, NSString *
 			stringWithFormat:[specifier propertyForKey:@"warningMessage"],
 			recommendedMax
 		];
-		UIAlertView *alert = [[UIAlertView alloc]
-			initWithTitle:@"Warning"
-			message:message
-			delegate:nil
-            cancelButtonTitle:@"OK"
-            otherButtonTitles:nil
-		];
-		[alert show];
+		if (@available(iOS 9.0, *)) {
+			UIAlertController *alert = [UIAlertController
+				alertControllerWithTitle:@"Warning"
+				message:message
+				preferredStyle:UIAlertControllerStyleAlert
+			];
+			[alert addAction:[UIAlertAction
+				actionWithTitle:@"OK"
+				style:UIAlertActionStyleDefault
+				handler:nil
+			]];
+			[self presentViewController:alert animated:YES completion:nil];
+		}
+		else {
+			UIAlertView *alert = [[UIAlertView alloc]
+				initWithTitle:@"Warning"
+				message:message
+				delegate:nil
+				cancelButtonTitle:@"OK"
+				otherButtonTitles:nil
+			];
+			[alert show];
+		}
 		[specifier setProperty:@YES forKey:@"__didShowWarning"];
 	}
 }
