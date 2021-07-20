@@ -4,17 +4,27 @@ mv() {
 	command mv "/Library/Application Support/MobileGoose/$1/"* "/Library/MobileGoose/$1/" 2> /dev/null > /dev/null || true
 }
 
-function finish() {
-	f="${1}"
+finish() {
+	action="${1}"
 
 	# No control fd: bail out
-	[[ -z "${f}" || -z "${CYDIA}" ]] && return
-	cydia=(${CYDIA})
+	[ -z "${action}" || -z "${CYDIA}" ] && return
+
+	fd_version=
+	fd=
+	i=0
+	for item in ${CYDIA}; do
+		case "${i}" in
+			0) fd="${item}";;
+			1) fd_version="${item}";;
+		esac
+		i=$((i+1))
+	done
 
 	# Cydia control fd version != 1: bail out
-	[[ ${cydia[1]} -eq 1 ]] || return
+	[ "${fd_version}" -eq 1 ] || return
 
-	echo "finish:${f}" >&${cydia[0]}
+	echo "finish:${action}" >&${fd}
 }
 
 case "$1" in
