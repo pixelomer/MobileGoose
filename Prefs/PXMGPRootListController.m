@@ -10,7 +10,9 @@
 static void (*MobileGoose$UILabel$setText$orig)(id,SEL,id) = nil;
 static void MobileGoose$UILabel$setText$hook(UILabel *self, SEL _cmd, NSString *text) {
 	if ([self._viewControllerForAncestor isKindOfClass:[PXMGPRootListController class]]) {
-		if ([self.superview isKindOfClass:[UISlider class]]) {
+		if (self.superview != nil && [NSStringFromClass(self.superview.class)
+			containsString:@"UISlider"])
+		{
 			text = [text componentsSeparatedByString:@"."].firstObject;
 		}
 	}

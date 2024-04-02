@@ -1,0 +1,33 @@
+#!/bin/sh
+
+finish() {
+	action="${1}"
+
+	# No control fd: bail out
+	[ -z "${action}" -o -z "${CYDIA}" ] && return
+
+	fd_version=
+	fd=
+	i=0
+	for item in ${CYDIA}; do
+		case "${i}" in
+			0) fd="${item}";;
+			1) fd_version="${item}";;
+		esac
+		i=$((i+1))
+	done
+
+	# Cydia control fd version != 1: bail out
+	[ "${fd_version}" -eq 1 ] || return
+
+	echo "finish:${action}" >&${fd}
+}
+
+case "$1" in
+
+	triggered)
+		echo "MobileGoose mods were changed, requesting a respring..."
+		finish reload
+		;;
+
+esac

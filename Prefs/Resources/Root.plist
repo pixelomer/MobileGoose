@@ -86,7 +86,7 @@
 			<key>label</key>
 			<string>Gift Count</string>
 			<key>footerText</key>
-			<string>You can tap the gifts to dismiss them.</string>
+			<string>You can tap gifts to dismiss them.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -152,7 +152,7 @@
 			<key>label</key>
 			<string>Credits</string>
 			<key>footerText</key>
-			<string>MobileGoose was inspired by Desktop Goose, which was made by Samperson. Thanks to him for making an interesting program like that which lead to the creation of MobileGoose.</string>
+			<string>Thanks to Samperson for creating Desktop Goose, which inspired me to make MobileGoose for Apple devices.</string>
 		</dict>
 		<dict>
 			<key>cell</key>

@@ -2,12 +2,14 @@
 #import <Goose/MGGooseView.h>
 #import <Goose/MGViewController.h>
 #import <Goose/MGGooseController.h>
+#import <rootless.h>
 
 @interface MGWindow : UIWindow
 @end
 
 @interface SpringBoard : NSObject
 - (BOOL)isLocked;
+- (NSSet<UIWindowScene *> *)connectedScenes;
 @end
 
 static CGAffineTransform transform;
@@ -59,7 +61,13 @@ CGAffineTransform MGGetTransform(void) {
 	viewController = [MGViewController new];
 	transform = [viewController transformForOrientation:UIInterfaceOrientationPortrait];
 	gooseWindow = (UIWindow *)[[%c(MGWindow) alloc] initWithFrame:UIScreen.mainScreen.bounds];
-	gooseWindow.screen = [UIScreen mainScreen];
+	if (@available(iOS 13.0, *)) {
+		UIWindowScene *scene = self.connectedScenes.allObjects[0];
+		gooseWindow.windowScene = scene;
+	}
+	else {
+		gooseWindow.screen = [UIScreen mainScreen];
+	}
 	gooseWindow.rootViewController = viewController;
 	gooseWindow.userInteractionEnabled = YES;
 	gooseWindow.opaque = NO;
@@ -222,7 +230,7 @@ static void MGHandleExitNotification(
 		NULL,
 		0
 	);
-	NSString *dir = @"/Library/MobileGoose/Mods";
+	NSString *dir = ROOT_PATH_NS(@"/Library/MobileGoose/Mods");
 	NSArray *mods = [NSFileManager.defaultManager
 		contentsOfDirectoryAtPath:dir
 		error:nil

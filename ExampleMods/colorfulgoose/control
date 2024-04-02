@@ -6,5 +6,5 @@ Priority: optional
 Section: Tweaks
 Architecture: iphoneos-arm
 Depends: com.pixelomer.mobilegoose (>=1.2)
-Maintainer: PixelOmer
-Author: PixelOmer
+Maintainer: pixelomer
+Author: pixelomer

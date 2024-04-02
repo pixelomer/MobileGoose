@@ -28,7 +28,7 @@
 }
 
 - (void)preferenceWithKey:(NSString *)key didChangeToValue:(id)value {
-	if (!value) value = PrefValue(key);
+	if (!value) value = PrefValue(key) ?: @"";
 	if (![key isEqualToString:@"Name"] || ![value isKindOfClass:[NSString class]]) return;
 	nameLabel.text = ((NSString *)value).length ? value : @"Joe";
 }

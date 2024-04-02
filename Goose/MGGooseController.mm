@@ -5,6 +5,7 @@
 #import "MGViewController.h"
 #import "MGGooseController.h"
 #import "NSPointerArray+FixedCompact.h"
+#import <rootless.h>
 
 #pragma GCC diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"
@@ -23,7 +24,7 @@ static NSPointerArray *sharedContainers;
 - (void)loadMeme {
 	BOOL isImage = [imageContainer isKindOfClass:[MGImageContainerView class]];
 	NSString *path = [NSString
-		stringWithFormat:@"/Library/MobileGoose/%@",
+		stringWithFormat:ROOT_PATH_NS(@"/Library/MobileGoose/%@"),
 		isImage ? @"Memes" : @"Notes"
 	];
 	NSArray *files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:path error:nil];

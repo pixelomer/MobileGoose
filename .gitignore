@@ -2,3 +2,5 @@ packages
 .theos
 obj
 **/.DS_Store
+/layout/DEBIAN/
+/layout/DEBIAN/*

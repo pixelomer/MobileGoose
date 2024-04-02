@@ -1,5 +1,6 @@
 #import "PXMGPModListController.h"
 #import "PXMGPModDetailsController.h"
+#import <rootless.h>
 #import <Preferences/PSSpecifier.h>
 
 @implementation PXMGPModListController
@@ -7,7 +8,7 @@
 - (NSArray *)specifiers {
 	if (!_specifiers) {
 		NSMutableArray *mutableSpecifiers = [NSMutableArray new];
-		NSString *modRoot = @"/Library/MobileGoose/Mods";
+		NSString *modRoot = ROOT_PATH_NS(@"/Library/MobileGoose/Mods");
 		NSError *error = nil;
 		NSArray *modNames = [NSFileManager.defaultManager
 			contentsOfDirectoryAtPath:modRoot

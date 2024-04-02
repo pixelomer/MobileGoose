@@ -8,7 +8,7 @@ finish() {
 	action="${1}"
 
 	# No control fd: bail out
-	[ -z "${action}" || -z "${CYDIA}" ] && return
+	[ -z "${action}" -o -z "${CYDIA}" ] && return
 
 	fd_version=
 	fd=
